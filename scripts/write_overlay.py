@@ -124,7 +124,7 @@ def check_sysargs(args):
     an output file, respectively.
     """
     assert type(args) == list, "args must have type 'list'"
-    assert len(args) >= 4, "less than four system arguments were given"
+    assert len(args) >= 5, "less than five system arguments were given"
     
     #print('\n', args)
     
@@ -132,21 +132,30 @@ def check_sysargs(args):
     
     #print(str(args[-1].lower() != 'false'))
     
-    if args[-1].lower() != 'true' and args[-1].lower() != 'false':
-        raise ValueError(f"The last system argument was neither True nor False")
+
+    args[-1] = args[-1].split(',')
+    for i in range(len(args[-1])):
+        try:
+            arg[-1][i] = float(arg[-1][i])
+        except ValueError:
+            print(f"The last system argument should be a comma separated string of max heights, \n\
+corresponding to the max heights of the bedgraph file lists to plot.")
+
+    if args[-2].lower() != 'true' and args[-1].lower() != 'false':
+        raise ValueError(f"The second to last system argument was neither True nor False")
         sys.exit()
         
     else:
-        if args[-1].lower() == 'true':
-            args[-1] = True
+        if args[-2].lower() == 'true':
+            args[-2] = True
         else:
             args[-1] = False
         
-    if ".ini" not in args[-2]:
-        raise ValueError(f"The second to last system argument not a .ini file")
+    if ".ini" not in args[-3]:
+        raise ValueError(f"The third to last system argument not a .ini file")
         sys.exit()
         
-    for arg in args[:-2]:
+    for arg in args[:-3]:
         files = arg.split(',')
         for file in files:
             try:
@@ -155,7 +164,7 @@ def check_sysargs(args):
             except ValueError:
                 print(f"{file} is not a valid file")
                 sys.exit()
-    return args[:-2], args[-2], args[-1]
+    return args[:-3], args[-3], args[-2], args[-1]
         
 
 def get_lines(option_dictionary,
@@ -212,8 +221,10 @@ def get_xaxis(fontsize = 10,
 
 def make_all_lines(colors,
                    overlay,
+                   heights,
                    *args):
     
+    assert type(heights) == list, "heights should be of type 'list'"
     assert type(colors) == list, "colors should be of type 'list'"
     for arg in args:
         assert type(arg) == list, "args should be lists of files"
@@ -222,6 +233,7 @@ def make_all_lines(colors,
     
     lines += get_spacer()
     
+    blockcount = 0
     for arg in args:
         divisor = len(arg)
         count = 0
@@ -239,6 +251,8 @@ def make_all_lines(colors,
                         
                         bedgraph_formatting['overlay_previous'] = 'default'
                         bedgraph_formatting['alpha'] = 1
+                        bedgraph_formatting['max_value'] = heights[blockcount]
+                        blockcount += 1
                         
                         lines += get_lines(bgr_keys,
                                            **bedgraph_formatting)
@@ -282,12 +296,13 @@ def main():
     
     args = sys.argv
     
-    filestrings, outfiles, overlay = check_sysargs(args)
+    filestrings, outfiles, overlay, heights = check_sysargs(args)
     
     file_lists = [files.split(',') for files in filestrings]
     
     lines = make_all_lines(colours,
                            overlay,
+                           heights,
                            *file_lists)
     
     with open(outfiles, 'w') as f:
