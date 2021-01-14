@@ -4,63 +4,151 @@ Kenny P. Callahan
 
 A little helper to create a .genome file for bedtools.
 """
+###########################################################################################
+#
+#        Imports
 
 import glob
 import sys
 
-args = sys.argv
-print(args)
-# Get the directory string from the input argument
-directory=""
+#
+#
+###########################################################################################
+#
+#        Functions
 
-try:
-    splitter = args[1].index('/')
-    paths = args[1].split('/')
-    if args[2] == "True":
-        for p in range(len(paths)-1):
-            directory+=f"{paths[p]}/"
-    else:
-        for p in range(len(paths)):
-            directory+=f"{paths[p]}/"
-except:
-    directory+=f"{args[1]}/"
+def check_sysargs(args):
 
-#cd teprint(directory)
+    """
+    given system argument inputs, ensure that they have
+    the following characteristics:
 
-# Open and write the length.genome file, which will hold
-# the chromosomes and their lengths.
-with open(f"{directory}length.genome", 'w') as g:
+    -> args[0] : Is always the name of the python file (count_genome_chars.py)
+    -> args[1] : path to the FASTA files (assumes linux/style/filepath)
+    -> args[2] : A truthy value.
+                 True  -> Slice the last argument of the path, as it is a file (or the path ends in '/')
+                 False -> The path is to the folder, not to a file (or the path does not end in '/')
+    """
+    # Do the easy argument checking.
+    assert len(args) == 3, 'Only three system arguments are permitted:\n args[0] == count_genome_chars.py \n args[1] == linux/style/filepath/to/chorm_fastas \n args[2] == true/false'
+    assert args[2].lower() == 'true' or args[2].lower() == 'false', "The third system argument must be true or false"
 
-    # Lines list, will be used to write chromosome lengths
-    # to the output file
-    lines = []
+    # Initialize the directory string
+    directory=""
 
-    # Loop over the FASTA files in the directory
-    for fast in glob.iglob(f"{directory}/*.fasta"):
+    # Split the path on the '/' character. If there is a trailing '/',
+    # then the last element will be an empty string
+    path_parts = args[1].split('/')
 
-        # Count variable initialized for this file
-        count = 0
+    # Loop over the parts of the folderpath
+    for p in path_parts:
+        # If the last sysarg is true and the loop is not at the last
+        # path part
+        if args[2].lower() == 'true' and p != path_parts[-1]:
+            # Then build the directory string using p
+            directory += f"{p}/"
+        # If the last sysarg is set to false
+        else:
+            # Then just build the directory string as is.
+            directory += f"{p}/"
 
-        # OPen and read the FASTA file
-        with open(fast,'r') as f:
+    # Once the directory string is built, check to make sure each
+    # fasta file can be opened. Loop over files in the directory
+    for file in glob.iglob(f"{directory}*.fasta"):
+        # Attempt to open the file
+        try:
+            with open(file, 'r') as f:
+                f.close()
+        # If this fails, raise a ValueError
+        except ValueError:
+            # Tell the user the file is invalid
+            print(f"{file} is not a valid file.")
+            # and system exit (equivalent of a keyboard interrupt
+            sys.exit()
 
-            # The chromosome name is in the first line
-            chrom = f.readline()
-            # In the first position
-            chrom = chrom.split(' ')[0]
-            # And preceededd by the character >
-            chrom = chrom[1:]
+    # If the files can be opened, then return the directory string.
+    return directory
 
-            # The number of nucleotides in the line is
-            # one less than the length of the line
-            for line in f:
-                count+=(len(line)-1)
+def count_nucleotides_fasta(file):
 
-            # Append the chromosome, count to the lines,
-            # tab separated with a newline character
-            lines.append(f"{chrom}\t{count}\n")
-            # Close the file
-            f.close()
-    # When all of the chromsomes are counted, write
-    # the lines of the file.
-    g.writelines(lines)
+    """
+    given a fasta file, return a string in the following format:
+
+    <chromosome>\t<nucleotide_count>\n
+
+    Assumes that the first line of the fasta file has the following format:
+
+    >[chromosome_identifier] [description of the chromosome]
+    """
+
+    # Open the file and read it. Assumes file has been
+    # pre determined as a valid file.
+    with open(file, 'r') as f:
+
+        # Get the chromosome identifier. Read the first line
+        chrom = f.readline()
+        # Split the line on the spaces, chromosome is in the 0th spot
+        chrom = chrom.split(' ')
+        # Chromosome is the 0th spot without the carrot (>)
+        chrom = chrom[0][1:]
+
+        # Use list comprehension to get the lengths of all remaining lines.
+        # Note that the len() method counts the newline character (\n) at the
+        # end of each line, so we must subtract one from the number
+        count_list = [(len(line) - 1) for line in f]
+
+        # The nucleotide count is the sum of the count list
+        count = sum(count_list)
+
+        # Close the file, save some RAM
+        f.close()
+
+    # Return the tab separated chromosome count string
+    return f"{chrom}\t{count}\n"
+
+def get_count_lines(fasta_dir):
+
+    """
+    given a directory that contains chromosome FASTA files,
+    return a list of lines to write to a .genome file.
+
+    Assumes that the fasta_dir has format path/to/folder/
+    """
+
+    # Use list comprehension to get the lines for writing.
+    # depends on the count_nucleotides_fasta() function.
+    lines = [count_nucleotides_fasta(file) for file in glob.iglob(f"{fasta_dir}*.fasta")]
+
+    return lines
+
+#
+#
+##########################################################################################
+#
+#       main() function
+
+def main():
+
+    # Get the system argument
+    args = sys.argv
+
+    # Check that they are valid, assign directory string to directory
+    directory = check_sysargs(args)
+
+    # Get the lines list using get_count_lines()
+    lines = get_count_lines(directory)
+
+    # Write the length.genome file to the given directory
+    with open(f"{directory}length.genome", 'w') as g:
+        g.writelines(lines)
+        g.close()
+
+    print(f"{directory}length.genome has been written.")
+
+main()
+
+#
+#
+##########################################################################################
+
+
