@@ -22,9 +22,9 @@ echo " but I have not tested it."
 echo " "
 echo " Theses are the commands that this program will run:"
 echo " "
-echo " Install numpy, scipy and pyGenomeTracks modules for Python 3.8.5"
+echo " Install numpy, scipy, glob and pyGenomeTracks modules for Python 3.8.5"
 echo " "
-echo " sudo python3 -m pip install numpy scipy pyGenomeTracks"
+echo " sudo python3 -m pip install numpy scipy glob pyGenomeTracks"
 echo " "
 echo " Install bowtie2 (genome alignment tool), bedtools (tools for working with aligned sequence files)"
 echo " and samtools (another tool for working with aligned sequence files)"
@@ -32,6 +32,7 @@ echo " "
 echo " sudo apt-get install bowtie2"
 echo " sudo apt-get install bedtools"
 echo " sudo apt-get install samtools"
+echo " sudo apt-get install bedops"
 echo " "
 echo " Install sambamba-0.8.0 from binaries. This requires making a directory, downloading the sources"
 echo " unpacking them, and creating a symbolic link in the local bin."
@@ -95,7 +96,7 @@ if [ "${quitters:1}" == q ]
          echo " Installation beginning. Please press 'y' when prompted."
          echo " "
 
-         sudo python3 -m pip install numpy scipy pyGenomeTracks
+         sudo python3 -m pip install numpy scipy glob pyGenomeTracks
 
          # The user should accept all of these installations
 
@@ -104,6 +105,8 @@ if [ "${quitters:1}" == q ]
          sudo apt-get install bedtools
 
          sudo apt-get install samtools
+
+         sudo apt-get install bedops
 
          # Now for the softwares directory
 

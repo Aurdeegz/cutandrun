@@ -36,7 +36,7 @@ if [ "${ind_ans,,}" == yes ]
 
     #Then ask the user for the directory containing the sequences
     then echo " Please enter the directory with the genomic FASTA file(s)"
-         echo " (example: drosophila_genome)"
+         echo " (example: drosophila/drosophila_genome)"
          read b_index
          echo " "
          echo " Your answer: $b_index"
@@ -90,7 +90,7 @@ if [ "${ind_ans,,}" == yes ]
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
 
-         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index"
+         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false"
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -104,7 +104,7 @@ elif [ "${ind_ans,,}" == no ]
     # Ask the user for the filepath to the index. Do not include .bt2 in this
     # as bowtie2 handles this automatically.
     then echo " Please enter the directory which has the bowtie2 index"
-         echo " (example: drosophila_genome)"
+         echo " (example: drosophila/drosophila_genome)"
          read b_index
          echo " "
          echo " Your answer: $b_index"
@@ -127,7 +127,7 @@ elif [ "${ind_ans,,}" == no ]
          echo " python3 ./scripts/python_files/make_genomefile/count_genome_chars.py $b_index"
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
-         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index"
+         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false"
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -139,7 +139,7 @@ fi
 
 while [ $stopper -eq 1 ];
 do
-    echo " Do you plan to use gene annotations for graphs?"
+    echo " Do you plan to use gene annotations for region plotting?"
     echo " "
     read using_annotations
     echo " "
@@ -155,7 +155,10 @@ done
 
 if [ "${using_annotations}" == yes ]
     then echo " "
-         echo " are the annotations made yet?"
+         echo " Have the parsed annotation files been created yet?"
+         echo " (these files would be in a directory with names like annotation_<annotation_type>.bed6"
+         echo " If you have this directory, then your answer should be yes. Otherwise, please download"
+         echo " an annotation file in GFF format from NCBI, and place it in your desired directory)"
          echo " "
          read annotations_made
          echo " "
@@ -166,7 +169,9 @@ if [ "${using_annotations}" == yes ]
              if [ "${annotations_made}" == yes ]
                  then stopper=3
                       echo " "
-                      echo " please input the filepath to the annoted bedfiles"
+                      echo " You have indicated that your annotation files have been created."
+                      echo " Please provide the filepath to your annotation file directory."
+                      echo " (Example: drosophila/drosophila_annotations/annotation_types)"
                       echo " "
                       read annot_dir
                       echo " "
@@ -176,24 +181,94 @@ if [ "${using_annotations}" == yes ]
                  elif [ "${annotations_made}" == no ]
                  then stopper=3
                       echo " "
-                      echo " please input the filepath to the .gff.gz file"
+                      echo " You have indicated that your annotation files have not been created."
+                      echo " If you have not already downloaded the GFF format file for your genome,"
+                      echo " please go to the NCBI genome browser "
+                      echo " (https://www.ncbi.nlm.nih.gov/genome/browse#!/overview/)"
+                      echo " find your organism, and download the annotations as a GFF file. Move"
+                      echo " this gzipped file to your desired directory, and please input that"
+                      echo " file path now."
                       echo " "
                       read annot_dir
                       echo " "
                       echo " Your answer: $annot_dir"
                       echo " "
+                      echo " Creating your annotation_types directory"
 
                       ./scripts/shell_scripts/bedops_scripts/bps_make_filter_annotations.sh -d "${annot_dir}"
 
                       annot_dir="${annot_dir}/annotation_types"
 
-                 else echo " Your answer was not a yes or no answer. Please try again"
+                      echo " "
+                      echo " The annotation file has been parsed and formatted to .bed6 files."
+                      echo " Those files will be located in the following directory:"
+                      echo " ${annot_dir}"
+                      echo " Please DO NOT delete the fields.txt file. This is used to hold"
+                      echo " the annotation types, and is used by the program in later steps"
+                      echo " "
+
+                 else echo " Your answer was not a yes or no answer. Please try again."
+                      read annotations_made
              fi
          done
+     echo " "
+     echo " Your genome has the following annotations:"
+     echo " "
+     declare -a ants_allowed
+     while IFS= read -r line;
+     do
+         echo " $line"
+         ants_allowed+=("$line")
+     done < "${annot_dir}/fields.txt"
+     echo " "
+     echo " Please input the annotations you would like to use, separated by commas."
+     echo " NOTE: case sensitive, no spaces"
+     echo " (Example: gene,CDS,lnc_RNA)"
+     echo " "
+     read annot_list
+     echo " "
+     echo " Your answer: $annot_list"
+     echo " "
+     holder="."
+     IFS=","
+     read -ra ARRD <<< "$annot_list"
+     for annot in "${ARRD[@]}"
+     do
+         same="no"
+         for allowed_annot in "${ants_allowed[@]}"
+         do
+             if [ "${annot}" == "${allowed_annot}" ]
+                 then same="yes"
+             fi
+         done
+         if [ "${same}" == "no" ]
+             then echo " "
+                  echo " $annot is not a valid annotation."
+                  echo " "
+             else if [ "${holder}" == "." ]
+                      then holder="${annot}"
+                  else holder="${holder},${annot}"
+                  fi
+         fi
+     done
+
+     if [ "${holder}" == "." ]
+         then echo " "
+              echo " No valid annotations were given. Proceeding without annotations"
+              echo " "
+              annot_dir="no"
+              annot_list="no"
+         else annot_list="${holder}"
+     fi
 
 elif [ "${using_annotations}" == no ]
     then echo " "
-         echo " proceeding without annotations"
+         echo " You have indicated that you do not want to proceed"
+         echo " with annotations. Regions will therefore be plotted"
+         echo " without annotations below."
+         echo " "
+         annot_dir="no"
+         annot_list="no"
 fi
 
 
@@ -297,28 +372,30 @@ if [ "${align_multiple,,}" == yes ]
          ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing"
 
          # Make some more plots :))
-         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "gene"
+         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"
 
     # If the user is only aligning one set of paired end sequencing sets
-#    elif [ "${align_multiple,,}" == no ]
+    elif [ "${align_multiple,,}" == no ]
 
     # then get the filepath to the folder containing the two files
-#    then echo " Please input the filepath to the folder containing the paired end fastq.gz files."
-#         read foldpath_fastqs
-#         echo " "
-#         echo " Your answer: $foldpath_fastqs"
-#         echo " "
+    then echo " Please input the filepath to the folder containing the paired end fastq.gz files."
+         read foldpath_fastqs
+         echo " "
+         echo " Your answer: $foldpath_fastqs"
+         echo " "
 
          # Run the alignment using the bt2_single_alignment
-#         ./scripts/bt2_single_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "$presets"
+         ./scripts/bt2_single_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "$presets"
 
          # Call the peaks using the bed_peak_calling script.
-#         ./scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
+         ./scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
 
          # Turn the .bg files into .bw files (used for graphing)
-#         ./scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -t made
+         ./scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -t made
 
          # Make some plots :)
-#         ./scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p ./scripts/
+         ./scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p ./scripts/
 
+         # Make some more plots :))
+         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"
 fi

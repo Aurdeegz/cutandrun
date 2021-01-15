@@ -305,13 +305,15 @@ def get_lines(option_dictionary,
     # If len(field) is one, then the program is running in the same folder
     # that the file is in, and the field has shape [file_name]
     if len(field) == 1:
-        field = f"[{field[0].split('.')[0]}]\n"
+        block_title = field[0].split('.')[0]
+        field = f"[{block_title}]\n"
+        newlines.append(field)
     # OTherwise, we just want to get the file name, so we want the last element
     # of the list, without the extansion.
     else:
-        field = f"[{field[-1].split('.')[0]}]\n"
-    # Add this to the newlines list
-    newlines.append(field)
+        block_title = field[-1].split('.')[0]
+        field = f"[{block_title}]\n"
+        newlines.append(field)
 
     # Proposed holds the kwarg values passed in by the user. We check to see
     # whether or not those are options in the option_dictionary
@@ -328,6 +330,8 @@ def get_lines(option_dictionary,
             else:
                 # Then use the value passed in by the user.
                 newlines.append(f"{key} = {kwargs[key]}\n")
+        elif key == 'title' and "annotation" in block_title:
+            newlines.append(f"{key} = {block_title[11:]}\n")
         # If the value is not in the proposed kwarg values list
         else:
             # Then add a commented out line to the newlines list.
@@ -431,7 +435,8 @@ def make_all_lines(colors,
                             try:
                                 # If this fails, then there are not enough heights in the list
                                 bedgraph_formatting['max_value'] = heights[blockcount]
-                                # So default back to auto for the max value.
+                                blockcount+=1
+                            # So default back to auto for the max value.
                             except:
                                 print("")
                                 print("WARNING: Not enough height values were given for overlayed plots \n using default: max_value = auto")
@@ -459,8 +464,6 @@ def make_all_lines(colors,
                     # Then change the following settings for the bed file/
                     bed_formatting['file'] = file
                     bed_formatting['file_type'] = extensions[ext]
-                    # Add a spacer
-                    lines += get_spacer()
                     # and make lines using bed_formatting.
                     lines.append(f"\n")
                     lines += get_lines(bed_keys,
