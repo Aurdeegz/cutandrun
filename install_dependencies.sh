@@ -83,7 +83,7 @@ echo " cut_run_pipeline.sh will be symbolically linked in the local bin as cutan
 echo " "
 echo ' full_path=$(dirname $(realpath install_dependencies.sh))'
 echo ' sudo cp -R "${full_path}" /usr/softwares'
-echo ' sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v1.sh /usr/local/bin/cutandrun'
+echo ' sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v2.sh /usr/local/bin/cutandrun'
 echo ' sudo rm -r "${full_path}"'
 
 echo " "
@@ -153,7 +153,7 @@ if [ "${quitters:1}" == q ]
 
          sudo cp -R "${full_path}" /usr/softwares
 
-         sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v1.sh /usr/local/bin/cutandrun
+         sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v2.sh /usr/local/bin/cutandrun
 
          sudo rm -r "${full_path}"
 
