@@ -327,7 +327,6 @@ def get_lines(file,
             # If the first string has both [ and ], then we are
             # at a new block
             if '[' in splt[0] and ']' in splt[0]:
-                print(count)
                 # Reassign area to be the string containing the new block
                 area = splt[0]
                 # Append the block string to the lines
