@@ -372,7 +372,7 @@ if [ "${align_multiple,,}" == yes ]
          ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing"
 
          # Make some more plots :))
-         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"
+         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
 
     # If the user is only aligning one set of paired end sequencing sets
     elif [ "${align_multiple,,}" == no ]
@@ -397,5 +397,5 @@ if [ "${align_multiple,,}" == yes ]
          ./scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p ./scripts/
 
          # Make some more plots :))
-         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"
+         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"-u "${using_annotations}"
 fi
