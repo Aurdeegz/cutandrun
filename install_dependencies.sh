@@ -33,6 +33,7 @@ echo " sudo apt-get install bowtie2"
 echo " sudo apt-get install bedtools"
 echo " sudo apt-get install samtools"
 echo " sudo apt-get install bedops"
+echo " sudo apt-get install fastqc"
 echo " "
 echo " Install sambamba-0.8.0 from binaries. This requires making a directory, downloading the sources"
 echo " unpacking them, and creating a symbolic link in the local bin."
@@ -83,7 +84,7 @@ echo " cut_run_pipeline.sh will be symbolically linked in the local bin as cutan
 echo " "
 echo ' full_path=$(dirname $(realpath install_dependencies.sh))'
 echo ' sudo cp -R "${full_path}" /usr/softwares'
-echo ' sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v2.sh /usr/local/bin/cutandrun'
+echo ' sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v3.sh /usr/local/bin/cutandrun'
 echo ' sudo rm -r "${full_path}"'
 
 echo " "
@@ -107,6 +108,8 @@ if [ "${quitters:1}" == q ]
          sudo apt-get install samtools
 
          sudo apt-get install bedops
+
+         sudo apt-get install fastqc
 
          # Now for the softwares directory
 
@@ -153,7 +156,7 @@ if [ "${quitters:1}" == q ]
 
          sudo cp -R "${full_path}" /usr/softwares
 
-         sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v2.sh /usr/local/bin/cutandrun
+         sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v3.sh /usr/local/bin/cutandrun
 
          sudo rm -r "${full_path}"
 

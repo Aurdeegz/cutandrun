@@ -359,6 +359,18 @@ if [ "${align_multiple,,}" == yes ]
          echo " Your answer: $foldpath_fastqs"
          echo " "
 
+         echo " "
+         echo " Would you like the program to provide FASTQC analysis"
+         echo " of your sequencing sets (OPTIONAL)?"
+         echo " "
+         read fastqc_svar
+         if [ "${fastqc_svar,,}" == yes ]
+             then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -m "${align_multiple}" -f "${foldpath_fastqs}"
+         else echo " "
+              echo " Proceeding without FASTQC analysis"
+              echo " "
+         fi
+
          # Run the alignments using the bt2_multi_alignment script
          ./scripts/shell_scripts/bowtie2_scripts/bt2_multi_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "${presets}"
 
@@ -383,6 +395,18 @@ if [ "${align_multiple,,}" == yes ]
          echo " "
          echo " Your answer: $foldpath_fastqs"
          echo " "
+
+         echo " "
+         echo " Would you like the program to provide FASTQC analysis"
+         echo " of your sequencing sets (OPTIONAL)?"
+         echo " "
+         read fastqc_svar
+         if [ "${fastqc_svar,,}" == yes ]
+             then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -m "${align_multiple}" -f "${foldpath_fa}"
+         else echo " "
+              echo " Proceeding without FASTQC analysis"
+              echo " "
+         fi
 
          # Run the alignment using the bt2_single_alignment
          ./scripts/bt2_single_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "$presets"
