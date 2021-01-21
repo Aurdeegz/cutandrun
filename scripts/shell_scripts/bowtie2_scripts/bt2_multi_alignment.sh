@@ -69,7 +69,7 @@ if [ "${presets}" == None ]
          echo " Your answer: $presets"
          echo " "
          if [ "${presets,,}" == yes ]
-             then presets="--local --cvery-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700"
+             then presets="--local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700"
                   echo " "
                   echo " Alignment settings: $presets"
                   echo " "
@@ -86,6 +86,9 @@ align_count=0
 # loop over the folders int he given folderpath
 for fold in "$foldpath_fastqs"/*
 do
+
+    mkdir "${fold}/bowtie2_output"
+
     #Get the directory and name of the save file, which is the same folder
     # containing the paired end sequence files with the name
     # alignment_${align_counter}.sam. The user is free to change these
@@ -93,8 +96,7 @@ do
     save="${fold}/alignment_${align_count}"
     savesam="${save}.sam"
 
-    # Increase the align count by one
-    align_count=$(($align_count + 1))
+    
 
     # Initialize the string that will hold the forwards and backwards
     # alignments parameters in bowtie2.
@@ -145,7 +147,7 @@ do
     # Create the bowtie2 parameter string in the format
     # -x path/to/index_name -1 path/to/file_R1.fastq.gz -2 path/to/file_R2.fastq.gz [PRESETS]
     bowtie_args="-x ""${ind_name}""${fileline}"" -S ""${savesam}"" ${presets}"
-    bowtie2 "$bowtie_args"
+    bowtie2 "$bowtie_args" &> "${fold}/bowtie2_output/align_${align_count}.txt"
 
     echo " Alignment complete..."
     echo " Saved as ${savesam} "
@@ -203,6 +205,9 @@ do
 
     # This bam file is temporary, and can be deleted at the very end.
     rm "${savebam}"
+
+    # Increase the align count by one
+    align_count=$(($align_count + 1))
 done
 
 echo "==================================================================================== "

@@ -9,6 +9,69 @@
 # When building my Drosophila reference, I downloaded
 # fasta files for each chromosome individually.
 
+
+get_array () {
+    # This angers me on a new level :(
+    string="$1"
+    delim="$2"
+    if [[ ( "${delim}" != "\t" ) || ( "${delim}" != "\n" ) ]]
+        then IFS="$delim"
+    else IFS=$'$delim'
+    fi
+    read -ra arrayy <<< "$string"
+    for item in "${arrayy[@]}"
+    do
+        echo "$item"
+    done
+}
+
+check_file_extension () {
+    # Check the file extension of the file(s)
+
+    declare -a extensions
+
+    arr_count=0
+    for f in "$1"/*
+    do
+        file=($( get_array "$f" "." ))
+        if [[ ( ${#extensions} -eq 0 ) && ( ${#file} -gt 1 ) ]]
+            then extensions[0]="${file[-1]}"
+                 arr_count=$(( $arr_count + 1 ))
+        else count=0
+             for ext in "${extensions[@]}"
+             do
+                 if [ "$ext" == "${file[-1]}" ]
+                     then count=$(( $count + 1 ))
+                 fi
+             done
+             if [ $count -lt 1 ]
+                 then extensions[$arr_count]="${file[-1]}"
+             fi
+             arr_count=$(( $arr_count + 1 ))
+        fi
+    done
+
+    count=0
+    exten=""
+
+    for ext in "${extensions[@]}"
+    do
+        if [[ ( "${ext}" != "bt2" ) && ( "${ext}" != "genome" ) ]]
+            then if [[ ( "${ext}" == "fa" ) || ( "${ext}" == "fna" ) || ( "${ext}" == faa ) || ( "${ext}" == ffa ) || ( "${ext}" == fasta ) && ("${ext}" != "${exten}" ) ]]
+                     then count=$(( $count + 1 ))
+                          exten="${ext}"
+                 fi
+        fi
+    done
+
+    if [[ ( $count -gt 1 ) || ( "${exten}" == "" ) ]]
+        then echo "mixed"
+    else echo "${exten}"
+    fi
+
+}
+
+
 echo " "
 date
 echo " "
@@ -18,7 +81,7 @@ stopper=0
 # While loop ensures that the only answers given are yes or no
 while [ $stopper -eq 0 ];
 do
-    echo " Would you like to create a bowtie2 index (yes/no)?"
+    echo " Would you like to create a bowtie2 index for your REFERENCE GENOME (yes/no)?"
     read ind_ans
     echo " "
     echo " Your answer: $ind_ans"
@@ -41,43 +104,22 @@ if [ "${ind_ans,,}" == yes ]
          echo " "
          echo " Your answer: $b_index"
          echo " "
-
-         # Create a cumulative variable named files. This will hold
-         # all of the paths/to/files.fasta needed for bowtie2-build
-         files=""
-
-         # Tell the user which files were located while populating
-         # the files variable
-         echo " Files found in the given index directory:\n"
-         for entry in "$b_index"/*.fasta
-         do
-             files="$entry"",${files}"
-             echo " $entry"
-         done
-
-         # Ask the user to name the index you are about to create
-         echo " Please enter the name you would like to give the new index"
-         echo " (example: flygenes)"
+         echo " "
+         echo " Please enter the name you would like to give the index"
+         echo " (Example: flygenes)"
          read ind_name
          echo " "
          echo " Your answer: $ind_name"
          echo " "
 
-         # Save the index in the same filepath as the original genome sequences
-         ind_name="$b_index""/""$ind_name"
+         ./scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${b_index}" -i "${ind_name}"
 
-         # Run bowtie2-build <path/to/file1.fasta,path/to/file2.fasta,...,path/to/filen.fasta> <path/to/ind_name>
-         bowtie2-build "$files" "$ind_name"
+         ext=$( check_file_extension "${b_index}" )
+         if [ "${ext}" == "mixed" ]
+             then echo " Failed to make .genome file. exiting..."
+                  exit
+         fi
 
-         echo "================================================================= "
-         echo " "
-         echo " "
-         echo " Bowtie2 index built, saved in $ind_name with file extension .bt2"
-         echo " "
-         echo " bowtie2-build $files $ind_name"
-         echo " "
-         echo " "
-         echo "================================================================= "
 
          echo "================================================================= "
          echo " "
@@ -90,7 +132,7 @@ if [ "${ind_ans,,}" == yes ]
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
 
-         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false"
+         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}"
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -117,6 +159,12 @@ elif [ "${ind_ans,,}" == no ]
          echo " "
          ind_name="${b_index}/${ind_name}"
 
+         ext=$( check_file_extension "${b_index}" )
+         if [ "${ext}" == "mixed" ]
+             then echo " Failed to make .genome file..."
+                  exit
+         fi
+         echo " ext    $ext"
          echo "================================================================= "
          echo " "
          echo " "
@@ -127,7 +175,8 @@ elif [ "${ind_ans,,}" == no ]
          echo " python3 ./scripts/python_files/make_genomefile/count_genome_chars.py $b_index"
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
-         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false"
+
+         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}"
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -137,7 +186,89 @@ elif [ "${ind_ans,,}" == no ]
 
 fi
 
+# While loop ensures that the only answers given are yes or no
 while [ $stopper -eq 1 ];
+do
+    echo " Would you like to perform spike-in alignments/evaluation (yes/no)?"
+    read spike_ans
+    echo " "
+    echo " Your answer: $spike_ans"
+    echo " "
+    if [ "${spike_ans,,}" == yes ]
+        then stopper=2
+        elif [ "${spike_ans,,}" == no ]
+        then stopper=2
+        else echo " That was not a yes or no answer. Please try again"
+    fi
+done
+
+if [ "${spike_ans,,}" == yes ]
+    then echo " "
+         echo " You have indicated that you wish to use spike-in alignments/evaluation."
+         echo " This requires the reference genome for the spike-in fragments (usually"
+         echo " E. coli)."
+         echo " "
+         spike_stop=0
+         while [ $spike_stop -eq 0 ];
+         do
+         echo " Has the bowtie2 index for the SPIKE-IN GENOME been created (yes/no)?"
+         echo " "
+         read spike_dir
+         echo " "
+         echo " Your answer: $spike_dir"
+         echo " "
+         if [ "${spike_dir}" == no ]
+             then spike_stop=1
+                  echo " "
+                  echo " Please input the directory path to the spike-in genome FASTA file"
+                  echo " (NOTE: It can be a gzipped file or it can be unzipped.)"
+                  echo " "
+                  read spike_dir
+                  echo " "
+                  echo " Your answer: $spike_dir"
+                  echo " "
+                  echo " "
+                  echo " The bowtie2 index will be named 'spike_index'."
+                  echo " "
+                  spike_ind="spike_index"
+
+                  ./scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${spike_dir}" -i "spike_index"
+
+         elif [ "${spike_dir}" == yes ]
+             then spike_stop=1
+                  echo " "
+                  echo " Please input the directory path to the spike-in index"
+                  echo " (Without the index name)"
+                  echo " "
+                  read spike_dir
+                  echo " "
+                  echo " Your answer: $spike_dir"
+                  echo " "
+                  echo " "
+                  echo " What is the name of your spike-in genome's bowtie2 index?"
+                  echo " (IF generated via this program, it is called 'spike_index')"
+                  echo " "
+                  read spike_ind
+                  echo " "
+                  echo " Your answer: $spike_ind"
+                  echo " "
+
+                  spike_name="${spike_dir}/${spike_ind}"
+
+         else echo " Your answer was neither yes nor no. Please try again."
+              echo " "
+         fi
+         done
+elif [ "${spike_ans,,}" == no ]
+    then echo " "
+         echo " Proceeding without spike-in evaluation."
+         echo " "
+fi
+
+
+
+
+while [ $stopper -eq 2 ];
 do
     echo " Do you plan to use gene annotations for region plotting?"
     echo " "
@@ -146,9 +277,9 @@ do
     echo " Your answer: $using_annotations"
     echo " "
     if [ "${using_annotations}" == yes ]
-        then stopper=2
+        then stopper=3
         elif [ "${using_annotations}" == no ]
-        then stopper=2
+        then stopper=3
         else echo " That was not a yes or no answer. Please try again"
     fi
 done
@@ -164,10 +295,10 @@ if [ "${using_annotations}" == yes ]
          echo " "
          echo " Your answer: $annotations_made"
          echo " "
-         while [ $stopper -eq 2 ];
+         while [ $stopper -eq 3 ];
          do
              if [ "${annotations_made}" == yes ]
-                 then stopper=3
+                 then stopper=4
                       echo " "
                       echo " You have indicated that your annotation files have been created."
                       echo " Please provide the filepath to your annotation file directory."
@@ -179,7 +310,7 @@ if [ "${using_annotations}" == yes ]
                       echo " "
 
                  elif [ "${annotations_made}" == no ]
-                 then stopper=3
+                 then stopper=4
                       echo " "
                       echo " You have indicated that your annotation files have not been created."
                       echo " If you have not already downloaded the GFF format file for your genome,"
@@ -273,7 +404,7 @@ fi
 
 
 # Once you have the index, ask the user if they are aligning one or multiple files
-while [ $stopper -eq 3 ];
+while [ $stopper -eq 4 ];
 do
     # Ask the user if they have multiple sequences to align
     echo " Do you wish to align multiple Paired-End sequencing sets (yes/no)?"
@@ -283,14 +414,36 @@ do
     echo " "
     # If the user is aligning multiple sequences or they are not, then end the loop
     if [ "${align_multiple,,}" == yes ]
-        then stopper=4
+        then stopper=5
         elif [ "${align_multiple,,}" == no ]
-        then stopper=4
+        then stopper=5
         # Otherwise, tell them that their input was invalid and try again
         else echo " That was not a yes or no answer. Please try again"
     fi
 done
 
+
+# If the align_multiple is yes, ask if there are control folders in the filepath
+if [ "${align_multiple}" == yes ]
+    then while [ $stopper -eq 5 ];
+         do
+             # Ask the user if they have multiple sequences to align
+             echo " Are you including control folders in the directory?"
+             echo " These controls would be used for MACS3 peak calling."
+             read using_controls
+             echo " "
+             echo " Your answer: $using_controls"
+             echo " "
+             # If the user is aligning multiple sequences or they are not, then end the loop
+             if [ "${using_controls,,}" == yes ]
+                 then stopper=6
+             elif [ "${using_controls,,}" == no ]
+                 then stopper=6
+             # Otherwise, tell them that their input was invalid and try again
+             else echo " That was not a yes or no answer. Please try again"
+             fi
+         done
+fi
 
 
 
@@ -308,7 +461,7 @@ printf "\n"
 printf "\n This program uses bowtie2 to align sequences with a reference genome. "
 printf "\n Bowtie2 many options which can be changed during alignment of sequences."
 printf "\n This program uses the preset values below:"
-printf "\n -s alignment.sam --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700"
+printf "\n --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700"
 printf "\n You, as the user, are welcome to input your own commands from the bowtie2 list above."
 printf "\n Your input MUST be in the same format as the preset values, following the general "
 printf "\n style defined here: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#bowtie2-options-align-paired-reads"
@@ -334,16 +487,22 @@ echo " "
 if [ "${presets,,}" == yes ]
 
     # Assign the preset values to the variable presets
-    then presets="--local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700"
+    then presets="--end-to-end --very-sensitive --no-mixed --no-discordant --phred33 -I 10 -X 700"
          echo " "
          echo " Alignment settings: $presets"
          echo " "
+         if [ "${spike_ans,,}" == yes ]
+             then spike_presets="--end-to-end --very-sensitive --no-unal --no-dovetail --no-overlap --no-mixed --no-discordant --phred33 -I 10 -X 700"
+         fi
     # Otherwise, ask the user for the values they wish to use.
     else echo " Please input the settings you would like to use."
          read presets
          echo " "
          echo " Alignment settings: $presets"
          echo " "
+         if [ "${spike_ans,,}" == yes ]
+             then spike_presets="${presets} --no-dovetail -- no-overlap"
+         fi
 fi
 
 # This portion will actually perform the alignments. If the user elected to
@@ -374,8 +533,19 @@ if [ "${align_multiple,,}" == yes ]
          # Run the alignments using the bt2_multi_alignment script
          ./scripts/shell_scripts/bowtie2_scripts/bt2_multi_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "${presets}"
 
-         # Call the peaks using the bed_peak_calling script.
-         ./scripts/shell_scripts/bedtools_scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
+         # Use macs3 to call peaks, including the controls if applicable.
+         ./scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -m "${align_multiple,,}" -c "${using_controls,,}"
+
+         if [ "${spike_ans,,}" == yes ]
+             then ./scripts/shell_scripts/bowtie2_scripts/bt2_spike_in.sh -f "${foldpath_fastqs}" -m "${align_multiple}" -s "${spike_dir}" -n "spike_index" -p "${spike_presets}"
+         fi
+
+         # Need to add an analysis python file here. Loop through bowtie2_output folders, make
+         # plots of alignment rates, depth (pairs aligned), fragments aligned (depth aligned 0 times)
+         # for both experiments and controls; repeat for spike in
+
+         # NO LONGER IN USE Call the peaks using the bed_peak_calling script.
+         # ./scripts/shell_scripts/bedtools_scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
 
          # Turn the .bg files into .bw files (used for graphing)
          ./scripts/shell_scripts/bedtools_scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -t made
@@ -383,8 +553,8 @@ if [ "${align_multiple,,}" == yes ]
          # Make some plots :)
          ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing"
 
-         # Make some more plots :))
-         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
+         # NEED TO UPDATE for narrowPeaks files   | Make some more plots :))
+#         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
 
     # If the user is only aligning one set of paired end sequencing sets
     elif [ "${align_multiple,,}" == no ]
@@ -402,7 +572,7 @@ if [ "${align_multiple,,}" == yes ]
          echo " "
          read fastqc_svar
          if [ "${fastqc_svar,,}" == yes ]
-             then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -m "${align_multiple}" -f "${foldpath_fa}"
+             then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -m "${align_multiple}" -f "${foldpath_fastqs}"
          else echo " "
               echo " Proceeding without FASTQC analysis"
               echo " "
@@ -411,8 +581,11 @@ if [ "${align_multiple,,}" == yes ]
          # Run the alignment using the bt2_single_alignment
          ./scripts/bt2_single_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "$presets"
 
-         # Call the peaks using the bed_peak_calling script.
-         ./scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
+         # NO LONGER IN USE Call the peaks using the bed_peak_calling script.
+#         ./scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
+
+         # Use macs3 to call peaks, including the controls if applicable.
+         ./scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -m "${align_multiple,,}" -c "${using_controls,,}"
 
          # Turn the .bg files into .bw files (used for graphing)
          ./scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -t made
@@ -420,6 +593,6 @@ if [ "${align_multiple,,}" == yes ]
          # Make some plots :)
          ./scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p ./scripts/
 
-         # Make some more plots :))
-         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"-u "${using_annotations}"
+         # NEED TO UPDATE for narrowPeaks fiels     |  Make some more plots :))
+#         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"-u "${using_annotations}"
 fi

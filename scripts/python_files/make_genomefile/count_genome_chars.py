@@ -29,9 +29,12 @@ def check_sysargs(args):
                  True  -> Slice the last argument of the path, as it is a file (or the path ends in '/')
                  False -> The path is to the folder, not to a file (or the path does not end in '/')
     """
+    allowed_extensions = ["fasta", "fa", "fna", "ffn", "faa", "frn"]
+
     # Do the easy argument checking.
-    assert len(args) == 3, 'Only three system arguments are permitted:\n args[0] == count_genome_chars.py \n args[1] == linux/style/filepath/to/chorm_fastas \n args[2] == true/false'
+    assert len(args) == 4, 'Only three system arguments are permitted:\n args[0] == count_genome_chars.py \n args[1] == linux/style/filepath/to/chorm_fastas \n args[2] == true/false'
     assert args[2].lower() == 'true' or args[2].lower() == 'false', "The third system argument must be true or false"
+    assert args[3] in allowed_extensions, "The given file extension is not a fasta file."
 
     # Initialize the directory string
     directory=""
@@ -67,7 +70,7 @@ def check_sysargs(args):
             sys.exit()
 
     # If the files can be opened, then return the directory string.
-    return directory
+    return directory, args[3]
 
 def count_nucleotides_fasta(file):
 
@@ -81,32 +84,51 @@ def count_nucleotides_fasta(file):
     >[chromosome_identifier] [description of the chromosome]
     """
 
+    lines = []
+
     # Open the file and read it. Assumes file has been
     # pre determined as a valid file.
     with open(file, 'r') as f:
 
-        # Get the chromosome identifier. Read the first line
-        chrom = f.readline()
-        # Split the line on the spaces, chromosome is in the 0th spot
-        chrom = chrom.split(' ')
-        # Chromosome is the 0th spot without the carrot (>)
-        chrom = chrom[0][1:]
+        current_chrom_id = ""
+        org_initials = ""
+        count = 0
+        go = False
+        for line in f:
 
-        # Use list comprehension to get the lengths of all remaining lines.
-        # Note that the len() method counts the newline character (\n) at the
-        # end of each line, so we must subtract one from the number
-        count_list = [(len(line) - 1) for line in f]
+            if line[0] == ">":
+                if "chromosome" in line and "sequence" not in line or "complete genome" in line:
+                    if len(lines) == 0 and current_chrom_id == "" and count == 0:
+                        go = True
+                        line = line.split(' ')
+                        current_chrom_id = f"{line[0][1:]}"
+                        org_initials = f"{line[1][0].lower()}{line[2][0].lower()}"
 
-        # The nucleotide count is the sum of the count list
-        count = sum(count_list)
+                    elif len(lines) == 0 and current_chrom_id != "":
+                        go = True
+                        lines.append(f"{current_chrom_id}\t{count}\n")
+                        line = line.split(' ')
+                        current_chrom_id = f"{line[0][1:]}"
+                        count = 0
+                    elif len(lines) > 0:
+                        go = True
+                        lines.append(f"{current_chrom_id}\t{count}\n")
+                        line = line.split(' ')
+                        current_chrom_id = f"{line[0][1:]}"
+                        count = 0
+                else:
+                    go = False
+            elif go == True:
+                count += len(line)-1
 
-        # Close the file, save some RAM
+        lines.append(f"{current_chrom_id}\t{count}\n")
+
         f.close()
 
     # Return the tab separated chromosome count string
-    return f"{chrom}\t{count}\n"
+    return lines, org_initials
 
-def get_count_lines(fasta_dir):
+def get_count_lines(fasta_dir, extension):
 
     """
     given a directory that contains chromosome FASTA files,
@@ -117,9 +139,14 @@ def get_count_lines(fasta_dir):
 
     # Use list comprehension to get the lines for writing.
     # depends on the count_nucleotides_fasta() function.
-    lines = [count_nucleotides_fasta(file) for file in glob.iglob(f"{fasta_dir}*.fasta")]
 
-    return lines
+    lines= []
+
+    for file in glob.iglob(f"{fasta_dir}/*.{extension}"):
+        new_lines, org_initials = count_nucleotides_fasta(file)
+        lines += new_lines
+
+    return lines, org_initials
 
 #
 #
@@ -133,17 +160,17 @@ def main():
     args = sys.argv
 
     # Check that they are valid, assign directory string to directory
-    directory = check_sysargs(args)
+    directory, extension = check_sysargs(args)
 
     # Get the lines list using get_count_lines()
-    lines = get_count_lines(directory)
+    lines, org_initials = get_count_lines(directory, extension)
 
     # Write the length.genome file to the given directory
     with open(f"{directory}length.genome", 'w') as g:
         g.writelines(lines)
         g.close()
 
-    print(f"{directory}length.genome has been written.")
+    print(f"{org_initials}")
 
 main()
 

@@ -146,6 +146,8 @@ done
 
 fileline=" -1 ${r1_files:1} -2 ${r2_files:1}"
 
+mkdir "${foldpath_fastqs}/bowtie2_output"
+
 echo "===============================BEGIN================================================ "
 echo " "
 echo " "
@@ -156,7 +158,7 @@ echo " "
 # Create the bowtie2 parameter string in the format
 # -x path/to/index_name -1 path/to/file_R1.fastq.gz -2 path/to/file_R2.fastq.gz [PRESETS]
 bowtie_args="-x ""${ind_name}""${fileline}"" -S ""${savesam}"" ${presets}"
-bowtie2 "$bowtie_args"
+bowtie2 "$bowtie_args" &> "${foldpath_fastqs}/bowtie2_output/align.txt"
 
 echo " "
 echo " "
