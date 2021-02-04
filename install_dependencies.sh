@@ -24,7 +24,7 @@ echo " Theses are the commands that this program will run:"
 echo " "
 echo " Install numpy, scipy, glob and pyGenomeTracks modules for Python 3.8.5"
 echo " "
-echo " sudo python3 -m pip install numpy scipy glob pyGenomeTracks"
+echo " sudo python3 -m pip install numpy scipy glob pyGenomeTracks macs3"
 echo " "
 echo " Install bowtie2 (genome alignment tool), bedtools (tools for working with aligned sequence files)"
 echo " and samtools (another tool for working with aligned sequence files)"
@@ -97,7 +97,7 @@ if [ "${quitters:1}" == q ]
          echo " Installation beginning. Please press 'y' when prompted."
          echo " "
 
-         sudo python3 -m pip install numpy scipy glob pyGenomeTracks
+         sudo python3 -m pip install numpy scipy glob pyGenomeTracks macs3
 
          # The user should accept all of these installations
 
