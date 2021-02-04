@@ -2,44 +2,28 @@
 
 # Want the user to have the option of using fastqc to view
 # their files. Required arguments:
-# -m multi_align  ->   Fed in from cut_run_pipeline_v3
+# DEPRICATED -m multi_align  ->   Fed in from cut_run_pipeline_v3
 # -f fastq_dir    ->   Directory to fastq files OR folders w/ files
-#
 
-while getopts f:m: options
+# Use getops syntax for optional inputs
+while getopts f: options
 do
 case "${options}"
 in
 f) A=${OPTARG};;
-m) B=${OPTARG};;
 esac
 done
 
-
+# Assign the optional input if given, otherwise None
 fastq_dir=${A:-None}
-multi_align=${B:-None}
 
-if [ "${multi_align}" == None ]
-    then stopper=0
-         while [ $stopper -eq 0 ]
-         do
-             echo " "
-             echo " multi_align"
-             echo " "
-             read multi_align
-             echo " "
-             echo " Your answer: $multi_align"
-             echo " "
-             if [[ ( "${multi_align,,}" == yes ) || ( "${multi_align,,}" == no )  ]]
-                 then stopper=1
-             else echo " Your answer was neither yes nor no. Please try again."
-             fi
-         done
-fi
-
+# If the directory is not given
 if [ "${fastq_dir}" == None ]
     then echo " "
-         echo " fastq_dir"
+         echo " You have not given a directory containing folders of FASTQ files."
+         echo " "
+         echo " Please input the file path to the directory containing folders"
+         echo " containing FASTQ files (note, they should be gzipped)"
          echo " "
          read fastq_dir
          echo " "
@@ -48,50 +32,39 @@ if [ "${fastq_dir}" == None ]
 fi
 
 
-
-if [ "${multi_align,,}" == yes ]
-    then echo " ====================BEGIN=========================="
-         echo " "
-         echo " Beginning FASTQC Analysis of FASTQ files in subfolders"
-         echo " of $fastq_dir"
-         echo " "
-         for folder in "${fastq_dir}"/*
-         do
-             mkdir "${folder}/fastqc"
-             for file in "${folder}"/*.gz
-             do
-                 if [ "${file}" == "${folder}/*.gz" ]
-                     then echo " There were no valid files in ${folder}"
-                          pass="true"
-                 else fastqc -o "${folder}/fastqc" "$file"
-                 fi
-             done
-             echo " "
-             echo " Complete. Analysis can be found in the folder"
-             echo " ${folder}/fastqc"
-             echo " "
-         done
-
-         echo " ====================END============================"
-
-elif [ "${multi_align,,}" == no ]
-    then echo " ====================BEGIN=========================="
-         echo " "
-         echo " Beginning FASTQC Analysis of FASTQ files in"
-         echo " $fastq_dir"
-         echo " "
-         mkdir "${folder}/fastqc"
-         for file in "${folder}"/*.gz
-         do
-             if [ "${file}" == "${folder}/*.gz" ]
-                 then echo " There were no valid files in ${folder}"
-             else fastqc -o "${folder}/fastqc" "$file"
-             fi
-         done
-         echo " "
-         echo " Complete. Analysis can be found in the folder"
-         echo " ${folder}/fastqc"
-         echo " "
-         echo " ====================END============================"
-
-fi
+echo " ====================BEGIN=========================="
+echo " "
+echo " Beginning FASTQC Analysis of FASTQ files in subfolders"
+echo " of $fastq_dir"
+echo " "
+# Loop over the folders in the directory
+for folder in "${fastq_dir}"/*
+do
+    # Make the fastqc output folder
+    mkdir "${folder}/fastqc"
+    # Loop over the .gz files in the directory
+    for file in "${folder}"/*.gz
+    do
+        # If there are not .gz files in the directory
+        if [ "${file}" == "${folder}/*.gz" ]
+            # Then check for straight up fastq files instead
+            then for f in "${folder}"/*.fastq
+                 do
+                     # If there was neither fastq or .gz files
+                     if [ "${file}" == "${folder}/*.fastq" ]
+                         # Then tell the user there are no valid files in the folder
+                         then echo " There were no valid files in ${folder}"
+                     # Otherwise, analyze the fastq file found
+                     else fastqc -o "${folder}/fastqc" "$file"
+                     fi
+                 done
+        # Otherwise, analyze the .gz file found
+        else fastqc -o "${folder}/fastqc" "$file"
+        fi
+    done
+    echo " "
+    echo " Complete. Analysis can be found in the folder"
+    echo " ${folder}/fastqc"
+    echo " "
+done
+echo " ====================END============================"

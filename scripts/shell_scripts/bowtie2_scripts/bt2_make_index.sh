@@ -1,41 +1,156 @@
 #!/bin/bash
 
-#Then ask the user for the directory containing the sequences
-echo "Please enter the directory with the index sequences"
-read b_index
+while getopts d:i: options
+do
+case "${options}"
+in
+d) A=${OPTARG};;
+i) B=${OPTARG};;
+esac
+done
 
-# Create a cumulative variable named files. This will hold
-# all of the paths/to/files.fasta needed for bowtie2-build
+directory=${A:-None}
+index=${B:-None}
+
+if [ "${directory}" == None ]
+    then echo " "
+         echo " You have not given the directory for the fasta file(s)"
+         echo " that will be made into a bowtie2 index."
+         echo " "
+         echo " Please input the filepath to the fasta file(s) to be used"
+         echo " as a bowtie2 index."
+         echo " "
+         read directory
+         echo " "
+         echo " Your answer: $directory"
+         echo " "
+#         if [ "${directory:-2:-1}" == "/" ]
+#             then directory="${directory::-1}"
+#         fi
+fi
+
+if [ "${index}" == None ]
+    then echo " "
+         echo " Please input the bowtie2 index name you would like to use."
+         echo " "
+         read index
+         echo " "
+         echo " Your answer: $index"
+         echo " "
+fi
+
+get_array () {
+    # This angers me on a new level :(
+    string="$1"
+    delim="$2"
+    if [[ ( "${delim}" != "\t" ) || ( "${delim}" != "\n" ) ]]
+        then IFS="$delim"
+    else IFS=$'$delim'
+    fi
+    read -ra arrayy <<< "$string"
+    for item in "${arrayy[@]}"
+    do
+        echo "$item"
+    done
+}
+
+check_for_index () {
+    # Check for .bt2 files already there
+    for f in "$1"/*.bt2
+    do
+        if [ "${f}" == "$1/*.bt2" ]
+            then outstring="False"
+        else outstring="True"
+             break
+        fi
+    done
+    echo "${outstring}"
+}
+
+check_file_extension () {
+    # Check the file extension of the file(s)
+
+    declare -a extensions
+
+    arr_count=0
+    for f in "$1"/*
+    do
+        file=($( get_array "$f" "." ))
+        if [[ ( ${#extensions} -eq 0 ) && ( ${#file} -gt 1 ) ]]
+            then extensions[0]="${file[-1]}"
+                 arr_count=$(( $arr_count + 1 ))
+        else count=0
+             echo " counting"
+             for ext in "${extensions[@]}"
+             do
+                 if [ "$ext" == "${file[-1]}" ]
+                     then count=$(( $count + 1 ))
+                 fi
+             done
+             if [ $count -lt 1 ]
+                 then extensions[$arr_count]="${file[-1]}"
+             fi
+             arr_count=$(( $arr_count + 1 ))
+        fi
+    done
+
+    count=0
+    for ext in "${extensions[@]}"
+    do
+        count=$(( $count + 1 ))
+    done
+
+    if [ $count -eq 1 ]
+        then echo "${extensions[0]}"
+    else echo "mixed"
+    fi
+}
+
+
+index_made=$( check_for_index "${directory}" )
+if [ "${index_made}" == "True" ]
+    then echo " An index was already found in the given directory."
+         exit
+fi
+
+ext=$( check_file_extension "${directory}" )
+
+if [ "${ext}" == "mixed" ]
+    then echo " Mixed file type were found in the given directory"
+         exit
+elif [ "${ext}" == "gz" ]
+    then for f in "${directory}"/*."${ext}"
+         do
+             gunzip "${f}"
+         done
+         ext=$( check_file_extension "${directory}" )
+fi
+
 files=""
 
-# Tell the user which files were located while populating
-# the files variable
-printf "\n Files found in the given index directory:\n"
-for entry in "$b_index"/*
+echo " "
+echo " Files found in the given directory:"
+echo " "
+for f in "${directory}"/*.${ext}
 do
-    files="$entry"",${files}"
-    printf "$entry\n"
+    files="${files},${f}"
 done
 
-# Ask the user to name the index you are about to create
-echo "Please enter the name you would like to give the new index"
-read ind_name
+index_path="${directory}/${index}"
 
-# Save the index in the same filepath as the original genome sequences
-ind_name="$b_index""/""$ind_name"
+echo "=====================BEGIN========================="
+echo " "
+echo " Building a bowtie2 index as ${index_path}"
+echo " "
 
-# Run bowtie2-build <path/to/file1.fasta,path/to/file2.fasta,...,path/to/filen.fasta> <path/to/ind_name>
-bowtie2-build "$files" "$ind_name"
+bowtie2-build "${files:1}" "${index_path}"
 
-printf "\n "
-printf "\n Your index files are"
-printf "\n "
-
-for fil in "$b_index"/*.bt2
+echo " "
+echo " Your index files are:"
+echo " "
+for ind in "${directory}"/*.bt2
 do
-    printf "\n $fil"
+    echo " ${ind}"
 done
-printf "\n "
-printf "\n are your index files. When using them with in bowtie2,"
-printf "\n type ${ind_name} (directory to them, plus the name but"
-printf "\n NOT the file extension)."
+echo " "
+echo "=====================END==========================="

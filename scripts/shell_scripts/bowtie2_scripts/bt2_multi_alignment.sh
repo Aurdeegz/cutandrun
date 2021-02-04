@@ -96,8 +96,6 @@ do
     save="${fold}/alignment_${align_count}"
     savesam="${save}.sam"
 
-    
-
     # Initialize the string that will hold the forwards and backwards
     # alignments parameters in bowtie2.
     r1_files=""
@@ -203,9 +201,29 @@ do
     echo " "
     echo "================================END================================================= "
 
+    bed_out="${save}.bg"
+
+    echo "==========================BEGIN================================"
+    echo " "
+    echo " "
+    echo " BAM file converted to bedgraph format using the command"
+    echo " bedtools genomecov -bg -ibam $savesortbam>$bed_out"
+    echo " "
+
+    bedtools genomecov -bg -ibam "$savesortbam">"$bed_out"
+
+    sort -k1,1 -k2,2n "${bed_out}" > "${save}_sorted.bg"
+
+    echo " Bedgraph format: Chromosome strand_start strand_end BG_value"
+    echo " "
+    echo " "
+    echo "==========================END=================================="
+
+
     # This bam file is temporary, and can be deleted at the very end.
     rm "${savebam}"
-
+    rm "${save}.bg"
+    mkdir "${fold}/temp_files"
     # Increase the align count by one
     align_count=$(($align_count + 1))
 done

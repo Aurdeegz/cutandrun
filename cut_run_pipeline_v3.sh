@@ -12,14 +12,31 @@
 
 get_array () {
     # This angers me on a new level :(
+    #
+    # To use this function and save the output to a new variable, use the
+    # syntax:
+    #
+    # new_array=($( get_array "string" "delimiter" ))
+    #
+    # I was using tr before, but this little function works well. This also
+    # avoids the problem of nested IFS splits (for example, reading the lines
+    # of a file and splitting the lines into an array)
+    #
+    # argument one should be the string
     string="$1"
+    # argument two should be the delimiter
     delim="$2"
+    # If the delimiter is not a special character, then set IFS normally
     if [[ ( "${delim}" != "\t" ) || ( "${delim}" != "\n" ) ]]
         then IFS="$delim"
+    # Otherwise, use the notation for the special characters
     else IFS=$'$delim'
     fi
+    # Once IFS is set, then use read to read create the arrayy
     read -ra arrayy <<< "$string"
+    # Loop over the items in the arrayy
     for item in "${arrayy[@]}"
+    # and echo them.
     do
         echo "$item"
     done
@@ -132,13 +149,15 @@ if [ "${ind_ans,,}" == yes ]
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
 
-         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}"
+         genome_size_text=$( python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}" )
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
          echo " "
          echo " "
          echo "================================================================="
+
+         ind_name="${b_index}/${ind_name}"
 
 # If the user decides not to construct an index , this means they have one
 elif [ "${ind_ans,,}" == no ]
@@ -176,7 +195,7 @@ elif [ "${ind_ans,,}" == no ]
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
 
-         python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}"
+         genome_size_text=$( python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}" )
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -287,7 +306,7 @@ done
 if [ "${using_annotations}" == yes ]
     then echo " "
          echo " Have the parsed annotation files been created yet?"
-         echo " (these files would be in a directory with names like annotation_<annotation_type>.bed6"
+         echo " (these files would be in a directory with names like annotation_<annotation_type>.bed"
          echo " If you have this directory, then your answer should be yes. Otherwise, please download"
          echo " an annotation file in GFF format from NCBI, and place it in your desired directory)"
          echo " "
@@ -329,6 +348,8 @@ if [ "${using_annotations}" == yes ]
                       ./scripts/shell_scripts/bedops_scripts/bps_make_filter_annotations.sh -d "${annot_dir}"
 
                       annot_dir="${annot_dir}/annotation_types"
+
+                      python3 scripts/python_files/annotation_editing/edit_annotation_file.py "${annot_dir}"
 
                       echo " "
                       echo " The annotation file has been parsed and formatted to .bed6 files."
@@ -403,47 +424,25 @@ elif [ "${using_annotations}" == no ]
 fi
 
 
-# Once you have the index, ask the user if they are aligning one or multiple files
 while [ $stopper -eq 4 ];
 do
     # Ask the user if they have multiple sequences to align
-    echo " Do you wish to align multiple Paired-End sequencing sets (yes/no)?"
-    read align_multiple
+    echo " Are you including control folders in the directory?"
+    echo " These controls would be used for MACS3 peak calling."
+    read using_controls
     echo " "
-    echo " Your answer: $align_multiple"
+    echo " Your answer: $using_controls"
     echo " "
     # If the user is aligning multiple sequences or they are not, then end the loop
-    if [ "${align_multiple,,}" == yes ]
+    if [ "${using_controls,,}" == yes ]
         then stopper=5
-        elif [ "${align_multiple,,}" == no ]
+    elif [ "${using_controls,,}" == no ]
         then stopper=5
-        # Otherwise, tell them that their input was invalid and try again
-        else echo " That was not a yes or no answer. Please try again"
+    # Otherwise, tell them that their input was invalid and try again
+    else echo " That was not a yes or no answer. Please try again"
     fi
 done
 
-
-# If the align_multiple is yes, ask if there are control folders in the filepath
-if [ "${align_multiple}" == yes ]
-    then while [ $stopper -eq 5 ];
-         do
-             # Ask the user if they have multiple sequences to align
-             echo " Are you including control folders in the directory?"
-             echo " These controls would be used for MACS3 peak calling."
-             read using_controls
-             echo " "
-             echo " Your answer: $using_controls"
-             echo " "
-             # If the user is aligning multiple sequences or they are not, then end the loop
-             if [ "${using_controls,,}" == yes ]
-                 then stopper=6
-             elif [ "${using_controls,,}" == no ]
-                 then stopper=6
-             # Otherwise, tell them that their input was invalid and try again
-             else echo " That was not a yes or no answer. Please try again"
-             fi
-         done
-fi
 
 
 
@@ -461,7 +460,9 @@ printf "\n"
 printf "\n This program uses bowtie2 to align sequences with a reference genome. "
 printf "\n Bowtie2 many options which can be changed during alignment of sequences."
 printf "\n This program uses the preset values below:"
-printf "\n --local --very-sensitive-local --no-unal --no-mixed --no-discordant --phred33 -I 10 -X 700"
+echo " "
+printf "\n --end-to-end --very-sensitive --no-mixed --no-discordant --phred33 -I 10 -X 700"
+echo " "
 printf "\n You, as the user, are welcome to input your own commands from the bowtie2 list above."
 printf "\n Your input MUST be in the same format as the preset values, following the general "
 printf "\n style defined here: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#bowtie2-options-align-paired-reads"
@@ -504,95 +505,67 @@ if [ "${presets,,}" == yes ]
              then spike_presets="${presets} --no-dovetail -- no-overlap"
          fi
 fi
-
-# This portion will actually perform the alignments. If the user elected to
-# align multiple paired end sequences at the same time
-if [ "${align_multiple,,}" == yes ]
-
-    # then ask for the filepath to the folder containing folders of
-    # paired end sequence files
-    then echo " Please input the filepath to the folders containing"
-         echo " each set of paired end fastq.gz files."
-         read foldpath_fastqs
-         echo " "
-         echo " Your answer: $foldpath_fastqs"
-         echo " "
-
-         echo " "
-         echo " Would you like the program to provide FASTQC analysis"
-         echo " of your sequencing sets (OPTIONAL)?"
-         echo " "
-         read fastqc_svar
-         if [ "${fastqc_svar,,}" == yes ]
-             then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -m "${align_multiple}" -f "${foldpath_fastqs}"
-         else echo " "
-              echo " Proceeding without FASTQC analysis"
-              echo " "
-         fi
-
-         # Run the alignments using the bt2_multi_alignment script
-         ./scripts/shell_scripts/bowtie2_scripts/bt2_multi_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "${presets}"
-
-         # Use macs3 to call peaks, including the controls if applicable.
-         ./scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -m "${align_multiple,,}" -c "${using_controls,,}"
-
-         if [ "${spike_ans,,}" == yes ]
-             then ./scripts/shell_scripts/bowtie2_scripts/bt2_spike_in.sh -f "${foldpath_fastqs}" -m "${align_multiple}" -s "${spike_dir}" -n "spike_index" -p "${spike_presets}"
-         fi
-
-         # Need to add an analysis python file here. Loop through bowtie2_output folders, make
-         # plots of alignment rates, depth (pairs aligned), fragments aligned (depth aligned 0 times)
-         # for both experiments and controls; repeat for spike in
-
-         # NO LONGER IN USE Call the peaks using the bed_peak_calling script.
-         # ./scripts/shell_scripts/bedtools_scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
-
-         # Turn the .bg files into .bw files (used for graphing)
-         ./scripts/shell_scripts/bedtools_scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -t made
-
-         # Make some plots :)
-         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing"
-
-         # NEED TO UPDATE for narrowPeaks files   | Make some more plots :))
-#         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
-
-    # If the user is only aligning one set of paired end sequencing sets
-    elif [ "${align_multiple,,}" == no ]
-
-    # then get the filepath to the folder containing the two files
-    then echo " Please input the filepath to the folder containing the paired end fastq.gz files."
-         read foldpath_fastqs
-         echo " "
-         echo " Your answer: $foldpath_fastqs"
-         echo " "
-
-         echo " "
-         echo " Would you like the program to provide FASTQC analysis"
-         echo " of your sequencing sets (OPTIONAL)?"
-         echo " "
-         read fastqc_svar
-         if [ "${fastqc_svar,,}" == yes ]
-             then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -m "${align_multiple}" -f "${foldpath_fastqs}"
-         else echo " "
-              echo " Proceeding without FASTQC analysis"
-              echo " "
-         fi
-
-         # Run the alignment using the bt2_single_alignment
-         ./scripts/bt2_single_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "$presets"
-
-         # NO LONGER IN USE Call the peaks using the bed_peak_calling script.
-#         ./scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
-
-         # Use macs3 to call peaks, including the controls if applicable.
-         ./scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -m "${align_multiple,,}" -c "${using_controls,,}"
-
-         # Turn the .bg files into .bw files (used for graphing)
-         ./scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -t made
-
-         # Make some plots :)
-         ./scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p ./scripts/
-
-         # NEED TO UPDATE for narrowPeaks fiels     |  Make some more plots :))
-#         ./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -m "$align_multiple" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}"-u "${using_annotations}"
+# Ask for the filepath to the folder containing folders of
+# paired end sequence files
+echo " Please input the filepath to the folders containing"
+echo " each set of paired end fastq.gz files."
+read foldpath_fastqs
+echo " "
+echo " Your answer: $foldpath_fastqs"
+echo " "
+echo " "
+echo " Would you like the program to provide FASTQC analysis"
+echo " of your sequencing sets (OPTIONAL)?"
+echo " "
+read fastqc_svar
+if [ "${fastqc_svar,,}" == yes ]
+    then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -f "${foldpath_fastqs}"
+else echo " "
+     echo " Proceeding without FASTQC analysis"
+     echo " "
 fi
+
+# Run the alignments using the bt2_multi_alignment script
+./scripts/shell_scripts/bowtie2_scripts/bt2_multi_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "${presets}"
+
+# Use macs3 to call peaks, including the controls if applicable.
+./scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -c "${using_controls,,}" -g "${genome_size_text}"
+
+# If the user elected to use spike in alignments, then the spike in alignment script will run
+if [ "${spike_ans,,}" == yes ]
+    then ./scripts/shell_scripts/bowtie2_scripts/bt2_spike_in.sh -f "${foldpath_fastqs}" -s "${spike_dir}" -n "spike_index" -p "${spike_presets}"
+fi
+
+# Need to add an analysis python file here. Loop through bowtie2_output folders, make
+# plots of alignment rates, depth (pairs aligned), fragments aligned (depth aligned 0 times)
+# for both experiments and controls; repeat for spike in
+
+# NO LONGER IN USE Call the peaks using the bed_peak_calling script.
+# ./scripts/shell_scripts/bedtools_scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
+
+# Turn the .bg file into .bw files (used for graphing)
+./scripts/shell_scripts/bedtools_scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -t made
+
+# Filter the macs3 narrowPeak files by q value = 0.01.
+# If you want to change this, the arguments for filter_macs3out_files.py are
+# args[0] : scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py (filename is default 0 when using sys.argv in Python
+# args[1] : folderpath to the experiments (path/to/folders)
+# args[2] : q value. type None if using p value. Default is 0.01
+# args[3] : p value. Default is None
+# args[4] : delimiter. Default is tab character (\t).
+# If you wish to use delimiter, you must also set q value and p value.
+python3 scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}"
+
+if [ "${using_annotations,,}" == yes ]
+    then python3 scripts/python_files/annotation_editing/peak_enrich_annotations.py "${foldpath_fastqs}" "${annot_dir}"
+fi
+
+# Make the tracks folder. This is where the annotations/peaks/raw data will be put
+mkdir "${foldpath_fastqs}/tracks"
+
+# Use pyGenomeTracks to maake some plots :))
+./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
+
+# Use pyGenomeTracks to plot the entire chromosome (uses BigWig file type by default)
+./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "scripts/python_files/trackfile_editing"
+

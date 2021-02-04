@@ -43,7 +43,7 @@ def check_sysargs(args):
     # Check that all of the system arguments have the desired characteristics.
     assert type(args) == list, "args should have type 'list'"
     assert len(args) == 4, "only three system arguments should be given"
-    assert ".bg" in args[1] or ".bedgraph" in args[1], "the first system argument should be a comma separated list of bedgraph files"
+    assert ".bg" in args[1] or ".bedgraph" in args[1] or ".narrowPeak", "the first system argument should be a comma separated list of bedgraph files or narrowPeak files"
     assert ".genome" in args[2], "the second system argument should be a .genome file"
 
     # The files list is arg[1], newline character removed (if its there), split on commas
@@ -149,9 +149,15 @@ def get_peaks(file_list,
                 # Strip the newline character and split the line
                 # on the delimiter
                 line = line.strip().split(delimiter)
-                # Update the file's dictionary using the line
-                update_dictionary(file_dictionary[file],
-                                  line)
+                if ".narrowPeak" in str(file):
+                    update_dictionary(file_dictionary[file],
+                                      line,
+                                      removal = -7)
+                else:
+                    # Update the file's dictionary using the line
+                    update_dictionary(file_dictionary[file],
+                                      line)
+
             # Close the file
             f.close()
     # Return the file dictionary
@@ -265,6 +271,9 @@ def find_regions(file_dictionary,
         regions = {}
         # Loop over the keys and values in the file_1 subdictionary
         for key, value in file_dictionary[file_1].items():
+            #
+            if key not in list(max_lengths.keys()):
+                continue
             # Initialze a list in the regions dictionary for the key
             regions[key] = []
             # Loop over the region tuples in value

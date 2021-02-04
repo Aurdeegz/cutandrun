@@ -1,13 +1,12 @@
 #!/bin/bash
 
 #Use GETOPTS command to get the optional arguments from the user.
-while getopts b:g:m:t: option
+while getopts b:g:t: option
 do
 case "${option}"
 in
 b) A=${OPTARG};;
 g) B=${OPTARG};;
-m) C=${OPTARG};;
 t) D=${OPTARG};;
 esac
 done
@@ -17,7 +16,6 @@ done
 
 bedgraph=${A:-None}
 genome=${B:-None}
-multi_align=${C:-None}
 temp_files=${D:-None}
 
 echo "==================================================================================== "
@@ -28,48 +26,6 @@ echo " Original code can be found at https://gist.github.com/taoliu/2469050"
 echo " "
 echo " "
 echo "==================================================================================== "
-
-# If the user does not specify whether they are converting
-# multiple bedgraph files
-if [ "$multi_align" == None ]
-    # Then ask the user whether or not they are analyzing
-    # multiple bedgraph files, and only end when they
-    # give a yes or no answer.
-    then stop=0
-         echo " Here are the following options and their intended uses:"
-         echo " "
-         echo " MULTIPLE: This option is intended for converting multiple bedgraph"
-         echo " files from multiple different sequencing experiments (which are "
-         echo " located in different folders within the same directory) into BigWig"
-         echo " files. An example directory is given in the cut_run_pipeline/multi_test"
-         echo " folder."
-         echo " "
-         echo " SINGLE: This option is intended to convert ALL bedgraph files within"
-         echo " a given file directory into BigWig files. Typically, this option would"
-         echo " be used when evaluating a single experiment, or when all bedgraph files"
-         echo " you need to analyze are in the same folder. An example of one experiment"
-         echo " can be found in cut_run_pipeline/single_test"
-         echo " "
-
-         while [ $stop -eq 0 ];
-         do
-             echo " Are you converting bedgraph files from multiple, separated"
-             echo " experiments into BigWig files (yes/no)?"
-             read multi_align
-             echo " "
-             echo " Your answer: $multi_align"
-             echo " "
-             if [ "${multi_align,,}" == yes ]
-                 then stop=1
-                      echo " Please make sure that your .bg files are all in separate folders,"
-                      echo " and that all of those folders are in the same filepath"
-                      echo " (example: path/to/file/folders)"
-                 elif [ "${multi_align,,}" == no ]
-                 then stop=1
-                 else echo " That was not a yes or no answer. Please try again."
-             fi
-         done
-fi
 
 # If a bedgraph file (or directory) is not given, ask the user to direct
 # the program to a bedgraph file/directory. If the user is converting multiple
@@ -135,170 +91,87 @@ if [ $temp_files == None ]
 fi
 
 
-if [ "${multi_align,,}" == yes ]
+# First, loop over all of the folders in the given
+# file directory
+for fold in "$bedgraph"/*
+    do
+    # Second, loop over the bedgraph file within each folder.
+    # If the cut_run_pipeline_v1.sh was used, then,
+    # there are two .bg files in each folder: peaks and raw.
+    for bg_file in "$fold"/*.bg
+    do
+        # This little loop splits the BAM file string
+        # by a period, saves this as an array, then
+        # loops over the items in the array. The first
+        # item in the array is the filepath and the
+        # name of the BAM file, and we use this to
+        # to make all temporary files used during peak
+        # calling.
+        IFS="."
+        read -ra ADDR <<< "$bg_file"
+        count=0
+        for path in "${ADDR[@]}"
+        do
+            if [ $count -eq 0 ]
+                then bw_out="${path}.bw"
+                     temp1="${path}_clip_step1.bg.clip"
+                     temp2="${path}_sort_step2.bg.sort.clip"
+                     count=$(($count + 1))
+            fi
+        done
+        # Get the directory path to the BAM file
+#        directory=$(dirname "$bam_file")
+        # Make the string for the temporary file directory
+#        temp_files="${directory}/temp_files"
+        # Make the string for the name of the settings text file
+#        settings="${directory}/peak_call_settings.txt"
 
-    # First, loop over all of the folders in the given
-    # file directory
-    then for fold in "$bedgraph"/*
-         do
+        echo "==========================BEGIN================================"
+        echo " "
+        echo " "
+        echo " "
+        echo " bedtools slop -i ${bg_file} -g ${genome} -b 0 | bedClip stdin ${genome} ${temp1} "
+        echo " "
 
-             # Second, loop over the bedgraph file within each folder.
-             # If the cut_run_pipeline_v1.sh was used, then,
-             # there are two .bg files in each folder: peaks and raw.
-             for bg_file in "$fold"/*.bg
-             do
+        bedtools slop -i "${bg_file}" -g "${genome}" -b 0 | bedClip stdin "${genome}" "${temp1}"
 
-                 # This little loop splits the BAM file string
-                 # by a period, saves this as an array, then
-                 # loops over the items in the array. The first
-                 # item in the array is the filepath and the
-                 # name of the BAM file, and we use this to
-                 # to make all temporary files used during peak
-                 # calling.
-                 IFS="."
-                 read -ra ADDR <<< "$bg_file"
-                 count=0
-                 for path in "${ADDR[@]}"
-                 do
-                     if [ $count -eq 0 ]
-                         then bw_out="${path}.bw"
-                              temp1="${path}_clip_step1.bg.clip"
-                              temp2="${path}_sort_step2.bg.sort.clip"
-                              count=$(($count + 1))
-                     fi
-                 done
+        echo " "
+        echo " "
+        echo " "
+        echo "==========================END=================================="
 
-                 # Get the directory path to the BAM file
-#                 directory=$(dirname "$bam_file")
+        echo "==========================BEGIN================================"
+        echo " "
+        echo " "
+        echo " "
+        echo " LC_COLLATE=C sort -k1,1 -k2,2n ${temp1}>${temp2}"
+        echo " "
 
-                 # Make the string for the temporary file directory
-#                 temp_files="${directory}/temp_files"
+        LC_COLLATE=C sort -k1,1 -k2,2n "${temp1}">"${temp2}"
 
-                 # Make the string for the name of the settings text file
-#                 settings="${directory}/peak_call_settings.txt"
+        echo " "
+        echo " "
+        echo " "
+        echo "==========================END=================================="
 
-                 echo "==========================BEGIN================================"
-                 echo " "
-                 echo " "
-                 echo " "
-                 echo " bedtools slop -i ${bg_file} -g ${genome} -b 0 | bedClip stdin ${genome} ${temp1} "
-                 echo " "
+        echo "==========================BEGIN================================"
+        echo " "
+        echo " "
+        echo " "
+        echo " bedGraphToBigWig ${temp2} ${genome} ${bw_out}"
+        echo " "
 
-                 bedtools slop -i "${bg_file}" -g "${genome}" -b 0 | bedClip stdin "${genome}" "${temp1}"
+        bedGraphToBigWig "${temp2}" "${genome}" "${bw_out}"
 
-                 echo " "
-                 echo " "
-                 echo " "
-                 echo "==========================END=================================="
+        echo " "
+        echo " "
+        echo " "
+        echo "==========================END=================================="
 
-                 echo "==========================BEGIN================================"
-                 echo " "
-                 echo " "
-                 echo " "
-                 echo " LC_COLLATE=C sort -k1,1 -k2,2n ${temp1}>${temp2}"
-                 echo " "
+        mv "${temp1}" "${temp2}" "${fold}/temp_files"
 
-                 LC_COLLATE=C sort -k1,1 -k2,2n "${temp1}">"${temp2}"
-
-                 echo " "
-                 echo " "
-                 echo " "
-                 echo "==========================END=================================="
-
-                 echo "==========================BEGIN================================"
-                 echo " "
-                 echo " "
-                 echo " "
-                 echo " bedGraphToBigWig ${temp2} ${genome} ${bw_out}"
-                 echo " "
-
-                 bedGraphToBigWig "${temp2}" "${genome}" "${bw_out}"
-
-                 echo " "
-                 echo " "
-                 echo " "
-                 echo "==========================END=================================="
-
-                 mv "${temp1}" "${temp2}" "${fold}/temp_files"
-
-             done
-         done
-fi
-
-if [ "${multi_align,,}" == no ]
-
-         # Second, loop over the bedgraph file within each folder.
-         # If the cut_run_pipeline_v1.sh was used, then,
-         # there are two .bg files in each folder: peaks and raw.
-    then for bg_file in "$bedgraph"/*.bg
-         do
-
-             # This little loop splits the BAM file string
-             # by a period, saves this as an array, then
-             # loops over the items in the array. The first
-             # item in the array is the filepath and the
-             # name of the BAM file, and we use this to
-             # to make all temporary files used during peak
-             # calling.
-             IFS="."
-             read -ra ADDR <<< "$bg_file"
-             count=0
-             for path in "${ADDR[@]}"
-             do
-                 if [ $count -eq 0 ]
-                     then bw_out="${path}.bw"
-                          temp1="${path}_clip_step1.bg.clip"
-                          temp2="${path}_sort_step2.bg.sort.clip"
-                          count=$(($count + 1))
-                 fi
-             done
-
-             echo "==========================BEGIN================================"
-             echo " "
-             echo " "
-             echo " "
-             echo " bedtools slop -i ${bg_file} -g ${genome} -b 0 | bedClip stdin ${genome} ${temp1} "
-             echo " "
-
-             bedtools slop -i "${bg_file}" -g "${genome}" -b 0 | bedClip stdin "${genome}" "${temp1}"
-
-             echo " "
-             echo " "
-             echo " "
-             echo "==========================END=================================="
-
-             echo "==========================BEGIN================================"
-             echo " "
-             echo " "
-             echo " "
-             echo " LC_COLLATE=C sort -k1,1 -k2,2n ${temp1}>${temp2}"
-             echo " "
-
-             LC_COLLATE=C sort -k1,1 -k2,2n "${temp1}">"${temp2}"
-
-             echo " "
-             echo " "
-             echo " "
-             echo "==========================END=================================="
-
-             echo "==========================BEGIN================================"
-             echo " "
-             echo " "
-             echo " "
-             echo " bedGraphToBigWig ${temp2} ${genome} ${bw_out}"
-             echo " "
-
-             bedGraphToBigWig "${temp2}" "${genome}" "${bw_out}"
-
-             echo " "
-             echo " "
-             echo " "
-             echo "==========================END=================================="
-
-             mv "${temp1}" "${temp2}" "${bedgraph}/temp_files"
-
-         done
-fi
+    done
+done
 
 echo "==============================================================="
 echo " "

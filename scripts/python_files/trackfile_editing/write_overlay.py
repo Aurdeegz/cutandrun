@@ -93,6 +93,19 @@ bed_formatting = {'file' : '',
                   'height_utr' : '0.2',
                   'color_utr' : 'red'}
 
+narrow_formatting = {'file' : '',
+#                     'title' : '',
+                     'file_type' : '',
+                     'height' : 'default',
+                     'show_data_range' : 'default',
+                     'show_labels' : 'false',
+                     'use_summit' : 'default',
+                     'type' : 'default',
+                     'width_adjust' : '2',
+                     'line_width' : '0.5',
+                     'color' : '',
+                     'max_value' : 'default'}
+
 #
 #
 ##########################################################################
@@ -112,10 +125,12 @@ colours = ['blue', 'red', 'black', 'violet', 'indigo', 'orange', 'green']
 # above, and edit the main lines script to include your file type.
 
 extensions = {'bg' : 'bedgraph',
+              'bdg' : 'bedgraph',
               'bedgraph' : 'bedgraph',
               'bw' : 'bigwig',
               'bigwig' : 'bigwig',
-              'bed' : 'bed'}
+              'bed' : 'bed',
+              'narrowPeak' : 'narrow_peak'}
 
 # bed_keys and bedgraph_keys are dictionaries with default values for
 # allowable values for bed and bedgraph files, respectively. The arguments
@@ -176,6 +191,22 @@ bgr_keys = {'file' : '',
             'operation' : 'file',
             'grid' : 'false',
             'rastersize' : 'false',
+            'file_type' : ''}
+
+
+nwp_keys = {'file' : '',
+            'title' : '',
+            'height' : '7',
+            'overlay_previous' : 'no',
+            'orientation' : '',
+            'line_width' : '1',
+            'color' : '#FF000080',
+            'max_value' : '',
+            'show_data_range' : 'true',
+            'show_labels' : 'true',
+            'use_summit' : 'true',
+            'width_adjust' : '1.5',
+            'type' : 'peak',
             'file_type' : ''}
 
 #
@@ -284,6 +315,7 @@ corresponding to the max heights of the bedgraph file lists to plot.")
     return args[:-3], args[-3], args[-2], args[-1]
 
 def get_lines(option_dictionary,
+              narrowpeaks = False,
               **kwargs):
     """
     given a dictionary of options (bed_keys, bedgraph_keys) and optional arguments
@@ -306,14 +338,14 @@ def get_lines(option_dictionary,
     # that the file is in, and the field has shape [file_name]
     if len(field) == 1:
         block_title = field[0].split('.')[0]
-        field = f"[{block_title}]\n"
-        newlines.append(field)
+        newfield = f"[{block_title}]\n"
+        newlines.append(newfield)
     # OTherwise, we just want to get the file name, so we want the last element
     # of the list, without the extansion.
     else:
         block_title = field[-1].split('.')[0]
-        field = f"[{block_title}]\n"
-        newlines.append(field)
+        newfield = f"[{block_title}]\n"
+        newlines.append(newfield)
 
     # Proposed holds the kwarg values passed in by the user. We check to see
     # whether or not those are options in the option_dictionary
@@ -332,6 +364,12 @@ def get_lines(option_dictionary,
                 newlines.append(f"{key} = {kwargs[key]}\n")
         elif key == 'title' and "annotation" in block_title:
             newlines.append(f"{key} = {block_title[11:]}\n")
+        elif key == 'title' and narrowpeaks == True:
+            for id in ["_exp_", "_exper_", "_experiment_", "_rep_", "_replicate_", "_enrich_", "_enrichment_"]:
+                title = [fld for fld in field if id in fld]
+                if title != []:
+                    newlines.append(f"{key} = {title[0]}\n")
+                    break
         # If the value is not in the proposed kwarg values list
         else:
             # Then add a commented out line to the newlines list.
@@ -391,6 +429,9 @@ def make_all_lines(colors,
     # Initialize the lines list and add a spacer so the plots aren't crammed at the top
     lines = []
     lines += get_spacer()
+
+    last = ""
+
     # Initialize block count, which is used for getting the height value for each block
     # of files.
     blockcount = 0
@@ -432,6 +473,8 @@ def make_all_lines(colors,
                             bedgraph_formatting['max_value'] = 'auto'
                         # Otherwise, try to change the bedgraph formatting max value
                         else:
+                            if last == "narrow_peak":
+                                blockcount+=1
                             try:
                                 # If this fails, then there are not enough heights in the list
                                 bedgraph_formatting['max_value'] = heights[blockcount]
@@ -458,6 +501,49 @@ def make_all_lines(colors,
                         lines += get_lines(bgr_keys,
                                            **bedgraph_formatting)
                     # Increase the count by 1
+                    count += 1
+                # IF the extension is a narrowPeak
+                elif extensions[ext] == "narrow_peak":
+                    last = "narrow_peak"
+                    lines.append("\n")
+                    # Change some of the bigwig formatting options:
+                    # Note to self: get a function to write a title string here.
+                    narrow_formatting['file'] = file
+                    narrow_formatting['color'] = colors[count]
+                    narrow_formatting['file_type'] = extensions[ext]
+                    #
+#                    if overlay == True and count == 0:
+                        #
+                    narrow_formatting['overlay_previous'] = 'default'
+                        #
+                    if heights == None:
+                        narrow_formatting['max_value'] = 'default'
+                        #
+                    else:
+                        try:
+                                #
+                            narrow_formatting['max_value'] = heights[blockcount]
+                            #
+                        except:
+                            print("")
+                            print("WARNING: Not enough height values were given for overlayed plots \n using default: max_value = auto")
+                            print("")
+                            narrow_formatting['max_value'] = 'default'
+                        #
+                    lines += get_lines(nwp_keys,
+                                       narrowpeaks = True,
+                                       **narrow_formatting)
+#                    elif overlay == True:
+                        #
+#                        narrow_formatting['overlay_previous'] = 'share-y'
+                        #
+#                        lines += get_lines(nwp_keys,
+#                                           **narrow_formatting)
+                    #
+#                    else:
+#                        lines += get_lines(nwp_keys,
+#                                           **narrow_formatting)
+                    #
                     count += 1
                 # If the extension is a 'bed'
                 elif extensions[ext] == 'bed':

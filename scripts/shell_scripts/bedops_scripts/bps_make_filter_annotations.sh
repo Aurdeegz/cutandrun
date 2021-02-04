@@ -158,8 +158,8 @@ do
                  firstline=$(($firstline + 1))
             else echo "$item">>"$directory/fields.txt"
         fi
-        filename="${annot_dir}/annotation_${item}.bed6"
-        awk 'BEGIN{OFS="\t"}{ if($8 == "'$item'") { print $1,$2,$3,$4,0,$6} }' "$bed_file" > "$filename"
+        filename="${annot_dir}/annotation_${item}.bed"
+        awk 'BEGIN{OFS="\t"}{ if($8 == "'$item'") { print $1,$2,$3,$4,0,$6,$8} }' "$bed_file" > "$filename"
     done
     # Move the fields.txt file to the annotation_types directory
     mv "${directory}/fields.txt" "${annot_dir}/fields.txt"
