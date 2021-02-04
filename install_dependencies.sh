@@ -164,10 +164,3 @@ if [ "${quitters:1}" == q ]
          echo " into the command line, and follow the instructions :) "
 
 fi
-
-
-
-
-
-
-
