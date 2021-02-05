@@ -207,10 +207,10 @@ do
     echo " "
     echo " "
     echo " BAM file converted to bedgraph format using the command"
-    echo " bedtools genomecov -bg -ibam $savesortbam>$bed_out"
+    echo " bedtools genomecov -bg -ibam -pc $savesortbam>$bed_out"
     echo " "
 
-    bedtools genomecov -bg -ibam "$savesortbam">"$bed_out"
+    bedtools genomecov -bg -pc -ibam "$savesortbam">"$bed_out"
 
     sort -k1,1 -k2,2n "${bed_out}" > "${save}_sorted.bg"
 

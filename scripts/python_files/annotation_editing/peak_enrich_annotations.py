@@ -13,34 +13,68 @@ A docstring goes here.
 
 """
 
-import sys
-import os
-import subprocess
-import glob
+##############################################################################################################
+#
+#         Importables
 
 
-filetype_formatting={"narrowPeak" : {'0' : 'chrom',
-                                     '1' : 'chromStart',
-                                     '2' : 'chromEnd',
+import sys          # Used for getting the system argument inputs
+import os           #
+import subprocess   # Used for invoking shell commands in python
+import glob         # Used for iterating over files in a directory
+
+#
+#
+##############################################################################################################
+#
+#         Pre-defined variables
+
+# Dictionary containing the columns (in computer scientist counting) of each file type
+# that will be retained, along with the information that they encode.
+#
+# The keys are used to identify the column in the split line, the value are used
+# for writing the headers.
+# If you use this on it's own and your filetype is not included here, then simply
+# add that file extension as a key in the dictionary, and define the subdictionary
+# with the columns you wish to keep.
+filetype_formatting={"narrowPeak" : {'0' : 'chrom',                  # output from macs3, which tells
+                                     '1' : 'chromStart',             # us useful stats about the peak
+                                     '2' : 'chromEnd',               # regions.
                                      '6' : 'signalValue',
                                      '7' : 'pValue (-log base 10)',
                                      '8' : 'qValue (-log base 10)',
                                      '9' : 'peak'},
-                     "xls" : {'0' : 'chrom',
-                              '1' : 'chromStart',
-                              '2' : 'chromEnd',
-                              '5' : 'peak_position',
+                     "xls" : {'0' : 'chrom',                         # Also macs3 output, but this file
+                              '1' : 'chromStart',                    # type shows us the fold enrichment
+                              '2' : 'chromEnd',                      # also. This is the default filetype
+                              '5' : 'peak_position',                 # for peak files
                               '6' : 'pValue (-log base 10)',
                               '7' : 'fold_enrichment',
                               '8' : 'qValue (-log base 10)'},
-                     "bed" : {'0' : 'chrom',
-                               '1' : 'chromStart',
-                               '2' : 'chromEnd',
-                               '3' : 'identifier',
+                     "bed" : {'0' : 'chrom',                         # Annotation files are bed files with
+                               '1' : 'chromStart',                   # seven columns: bed6 + annote type
+                               '2' : 'chromEnd',                     # These are required for comparing
+                               '3' : 'identifier',                   # peak regions
                                '5' : 'strandedness',
                                '6' : 'annotation_type'} }
 
-title_folder_formats = ["_exp_", "_exper_", "_experiment_", "_rep_", "_replicate_", "_enrich_", "_enrichment_"]
+# The titles of the folders should encode the information regarding the experiments.
+# These folders must include one of the following substrings, as described in the
+# README file.
+title_folder_formats = ["_exp_",            # experiment
+                        "_exper_",          # experiment
+                        "_experiment_",     # experiment
+                        "_rep_",            # replicate (experiment)
+                        "_replicate_",      # replicate (experimient)
+                        "_enrich_",         # enrichment (experiment)
+                        "_enrichment_"]     # enrichment (experiment)
+
+#
+#
+##############################################################################################################
+#
+#
+
 
 def get_exper_title(directory,
                     title_format_list):
@@ -107,7 +141,7 @@ def check_line_annotes(annot_file,
                        peak_end,
                        delimiter,
                        formatting_dictionary,
-                       region_wiggle = 100):
+                       region_wiggle = 1000):
     """
 
     """
@@ -566,18 +600,7 @@ def main():
 
     printer = filter_by_annot(annot_dir, f"{exp_dir}/peak_annotations", newlines)
     print(printer)
-#    os.mkdir(f"{exp_dir}/peak_annotations")
-#    with open(f"{exp_dir}/peak_annotations/temp.txt", 'w') as f:
-#        f.writelines(newlines[1:])
-#        f.close()
 
-#    subprocess.call(f"sort -k 1,1 -k 2,2n {exp_dir}/peak_annotations/temp.txt > {exp_dir}/peak_annotations/temp_sorted.txt", shell=True)
-#    subprocess.call(f'echo "{newlines[0]}" > {exp_dir}/peak_annotations/all_annotes_by_peak.txt', shell = True)
-#    subprocess.call(f"cat {exp_dir}/peak_annotations/all_annotes_by_peak.txt {exp_dir}/peak_annotations/temp_sorted.txt > {exp_dir}/peak_annotations/all_annotes_by_peak_sorted.xls", shell = True)
-#    subprocess.call(f"rm {exp_dir}/peak_annotations/temp.txt",shell = True)
-#    subprocess.call(f"rm {exp_dir}/peak_annotations/temp_sorted.txt",shell = True)
-#    subprocess.call(f"rm {exp_dir}/peak_annotations/all_annotes_by_peak.txt",shell = True)
-#    print('done')
 
 main()
 
