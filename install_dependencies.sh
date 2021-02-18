@@ -34,6 +34,7 @@ echo " sudo apt-get install bedtools"
 echo " sudo apt-get install samtools"
 echo " sudo apt-get install bedops"
 echo " sudo apt-get install fastqc"
+echo " sudo apt-get install r-base-core"
 echo " "
 echo " Install sambamba-0.8.0 from binaries. This requires making a directory, downloading the sources"
 echo " unpacking them, and creating a symbolic link in the local bin."
@@ -110,6 +111,8 @@ if [ "${quitters:1}" == q ]
          sudo apt-get install bedops
 
          sudo apt-get install fastqc
+
+         sudo apt-get install r-base-core
 
          # Now for the softwares directory
 

@@ -506,44 +506,38 @@ def make_all_lines(colors,
                 elif extensions[ext] == "narrow_peak":
                     last = "narrow_peak"
                     lines.append("\n")
-                    # Change some of the bigwig formatting options:
+                    # Change some of the narrowPeak formatting options:
                     # Note to self: get a function to write a title string here.
                     narrow_formatting['file'] = file
                     narrow_formatting['color'] = colors[count]
                     narrow_formatting['file_type'] = extensions[ext]
-                    #
-#                    if overlay == True and count == 0:
-                        #
+                    # The default for narrowpeaks is to not overlay the previous. There is not a
+                    # transparency parameter for narrowPeaks, otherwise I would overlay them
                     narrow_formatting['overlay_previous'] = 'default'
-                        #
+                    # If there was no height information given
                     if heights == None:
+                        # Then let pyGenomeTracks find the peaks heights for each track
                         narrow_formatting['max_value'] = 'default'
-                        #
+                    # Otherwise,
                     else:
+                        # Try to reassign the narrow_formatting dictionary with the heighst value
                         try:
-                                #
+                            # The heights value is in the heights list at index blockcount (which track
+                            # we are currently on
                             narrow_formatting['max_value'] = heights[blockcount]
-                            #
+                        # If this fails, then tell the user that the universe is imploding
                         except:
                             print("")
                             print("WARNING: Not enough height values were given for overlayed plots \n using default: max_value = auto")
                             print("")
+                            # and just let pyGenomeTracks find the default value
                             narrow_formatting['max_value'] = 'default'
-                        #
+                    # Once the formatting is all set, then use get_lines() and the formatting options to
+                    # update the lines list were generating
                     lines += get_lines(nwp_keys,
                                        narrowpeaks = True,
                                        **narrow_formatting)
-#                    elif overlay == True:
-                        #
-#                        narrow_formatting['overlay_previous'] = 'share-y'
-                        #
-#                        lines += get_lines(nwp_keys,
-#                                           **narrow_formatting)
-                    #
-#                    else:
-#                        lines += get_lines(nwp_keys,
-#                                           **narrow_formatting)
-                    #
+                    # and increase the count by 1 once this is complete.
                     count += 1
                 # If the extension is a 'bed'
                 elif extensions[ext] == 'bed':

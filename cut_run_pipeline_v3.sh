@@ -554,7 +554,7 @@ fi
 # args[3] : p value. Default is None
 # args[4] : delimiter. Default is tab character (\t).
 # If you wish to use delimiter, you must also set q value and p value.
-python3 scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}"
+python3 scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}" "0.1"
 
 if [ "${using_annotations,,}" == yes ]
     then python3 scripts/python_files/annotation_editing/peak_enrich_annotations.py "${foldpath_fastqs}" "${annot_dir}"
