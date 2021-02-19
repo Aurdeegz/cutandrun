@@ -85,7 +85,7 @@ def filter_line(line,
             raise ValueError(f"{pvalue} is not a floating point number")
         # Otherwise, take the negative log of the p value (default is base 10)
         else:
-            log_trans = -math.log(pvalue)
+            log_trans = -math.log(pvalue, 10)
     # If pvalue == None, then log transform the q value
     else:
         # Try to float the q value. Just to check if it is a floating point number
@@ -96,7 +96,7 @@ def filter_line(line,
             raise ValueError(f"{qvalue} is not a floating point number")
         # Otherwise, take the negative log of the q value (default is base 10)
         else:
-            log_trans = -math.log(qvalue)
+            log_trans = -math.log(qvalue, 10)
     # If the corrsponding data value is greater than the log transformed cutoff
     if float(line[col]) >= log_trans:
         # Then take the line! Initialize newline variable
