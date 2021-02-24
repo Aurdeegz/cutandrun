@@ -158,7 +158,7 @@ if [ "${quitters:1}" == q ]
          full_path=$(dirname $(realpath install_dependencies.sh))
 
          IFS="/" read -ra ADDR <<< "${full_path}"
-         folder="${full_path[-1]}"
+         folder="${ADDR[-1]}"
 
          sudo cp -R "${full_path}" /usr/softwares
 
