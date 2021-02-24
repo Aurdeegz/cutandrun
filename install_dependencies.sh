@@ -157,9 +157,12 @@ if [ "${quitters:1}" == q ]
 
          full_path=$(dirname $(realpath install_dependencies.sh))
 
+         IFS="/" read -ra ADDR <<< "${full_path}"
+         folder="${full_path[-1]}"
+
          sudo cp -R "${full_path}" /usr/softwares
 
-         sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v3.sh /usr/local/bin/cutandrun
+         sudo ln -s "/usr/softwares/${folder}/cut_run_pipeline_v3.sh" /usr/local/bin/cutandrun
 
          sudo rm -r "${full_path}"
 
