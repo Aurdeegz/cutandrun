@@ -89,6 +89,23 @@ check_file_extension () {
 }
 
 
+cutpath=$(which cutandrun)
+
+echo " "
+echo " Before we begin, here is the status of your cutandrun directory:"
+echo " "
+tree "$cutpath"
+echo " "
+echo " When you are prompted for information regarding the genome FASTA file(s),"
+echo " Please OMIT the beginning of the path ($cutpath). You only need to use"
+echo " the subpath (like genome/spike_dir), as the program knows where your"
+echo " cutandrun directory is located."
+echo " "
+echo " To proceed, press enter."
+echo " "
+read q
+
+
 echo " "
 date
 echo " "
@@ -115,11 +132,13 @@ done
 if [ "${ind_ans,,}" == yes ]
 
     #Then ask the user for the directory containing the sequences
-    then echo " Please enter the directory with the genomic FASTA file(s)"
-         echo " (example: drosophila/drosophila_genome)"
+    then echo " Please enter the directory with the genomic FASTA file(s),"
+         echo " EXCLUDING the path to the cutandrun folder itself"
+         echo " (example: genomes/drosophila/whole_genome)"
          read b_index
          echo " "
-         echo " Your answer: $b_index"
+         echo " Your answer: $cutpath/$b_index"
+         echo " "
          echo " "
          echo " "
          echo " Please enter the name you would like to give the index"
@@ -128,6 +147,8 @@ if [ "${ind_ans,,}" == yes ]
          echo " "
          echo " Your answer: $ind_name"
          echo " "
+
+         b_index="${cutpath}/${b_index}"
 
          ./scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${b_index}" -i "${ind_name}"
 
@@ -165,10 +186,11 @@ elif [ "${ind_ans,,}" == no ]
     # Ask the user for the filepath to the index. Do not include .bt2 in this
     # as bowtie2 handles this automatically.
     then echo " Please enter the directory which has the bowtie2 index"
-         echo " (example: drosophila/drosophila_genome)"
+         echo " EXCLUDING the path to the cutandrun folder itself"
+         echo " (example: genomes/drosophila/whole_genome)"
          read b_index
          echo " "
-         echo " Your answer: $b_index"
+         echo " Your answer: $cutpath/$b_index"
          echo " "
          echo " Please enter the name of the bowtie2 index."
          echo " (example: flygenes)"
@@ -176,7 +198,7 @@ elif [ "${ind_ans,,}" == no ]
          echo " "
          echo " Your answer: $ind_name"
          echo " "
-         ind_name="${b_index}/${ind_name}"
+         ind_name="${cutpath}/${b_index}/${ind_name}"
 
          ext=$( check_file_extension "${b_index}" )
          if [ "${ext}" == "mixed" ]
@@ -202,7 +224,6 @@ elif [ "${ind_ans,,}" == no ]
          echo " "
          echo " "
          echo "================================================================="
-
 fi
 
 # While loop ensures that the only answers given are yes or no
@@ -240,6 +261,8 @@ if [ "${spike_ans,,}" == yes ]
              then spike_stop=1
                   echo " "
                   echo " Please input the directory path to the spike-in genome FASTA file"
+                  echo " EXCLUDING the path to the cutandrun folder itself"
+                  echo " (example: genomes/spike_dir)"
                   echo " (NOTE: It can be a gzipped file or it can be unzipped.)"
                   echo " "
                   read spike_dir
@@ -250,6 +273,8 @@ if [ "${spike_ans,,}" == yes ]
                   echo " The bowtie2 index will be named 'spike_index'."
                   echo " "
                   spike_ind="spike_index"
+
+                  spike_dir=$"${cutpath}/${spike_dir}"
 
                   ./scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${spike_dir}" -i "spike_index"
 
@@ -263,6 +288,7 @@ if [ "${spike_ans,,}" == yes ]
                   echo " "
                   echo " Your answer: $spike_dir"
                   echo " "
+                  spike_dir="${cutpath}/${spike_dir}"
                   echo " "
                   echo " What is the name of your spike-in genome's bowtie2 index?"
                   echo " (IF generated via this program, it is called 'spike_index')"
@@ -327,6 +353,7 @@ if [ "${using_annotations}" == yes ]
                       echo " "
                       echo " Your answer: $annot_dir"
                       echo " "
+                      annot_dir="${cutpath}/${annot_dir}"
 
                  elif [ "${annotations_made}" == no ]
                  then stopper=4
@@ -344,6 +371,8 @@ if [ "${using_annotations}" == yes ]
                       echo " Your answer: $annot_dir"
                       echo " "
                       echo " Creating your annotation_types directory"
+
+                      annot_dir="${cutpath}/${annot_dir}"
 
                       ./scripts/shell_scripts/bedops_scripts/bps_make_filter_annotations.sh -d "${annot_dir}"
 
@@ -554,7 +583,7 @@ fi
 # args[3] : p value. Default is None
 # args[4] : delimiter. Default is tab character (\t).
 # If you wish to use delimiter, you must also set q value and p value.
-python3 scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}" "0.1"
+python3 scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}" "0.01"
 
 if [ "${using_annotations,,}" == yes ]
     then python3 scripts/python_files/annotation_editing/peak_enrich_annotations.py "${foldpath_fastqs}" "${annot_dir}"
