@@ -99,7 +99,11 @@ if [ "${quitters:1}" == q ]
          echo " Installation beginning. Please press 'y' when prompted."
          echo " "
 
-         sudo python3 -m pip install numpy scipy glob pyGenomeTracks macs3
+         sudo python3 -m pip install numpy
+         sudo python3 -m pip install scipy
+         sudo python3 -m pip install glob
+         sudo python3 -m pip install pyGenomeTracks
+         sudo python3 -m pip install macs3
 
          # The user should accept all of these installations
 
@@ -169,7 +173,24 @@ if [ "${quitters:1}" == q ]
 
          sudo rm -r "${full_path}"
 
-         echo " Installation complete. To use the cut and run pipeline, simply type 'cutandrun' "
-         echo " into the command line, and follow the instructions :) "
+         cd $HOME
+
+         sudo echo "" >> $HOME/.profile
+         sudo echo 'if [[ "$(umask)" == "0000" ]]; then' >> $HOME/.profile
+         sudo echo "    umask = 0022" >> $HOME/.profile
+         sudo echo "fi" >> $HOME/.profile
+
+         sudo echo "" >> /etc/wsl.conf
+         sudo echo "[automount]" >> /etc/wsl.conf
+         sudo echo "enabled = true" >> /etc/wsl.conf
+         sudo echo "root = /" >> /etc/wsl.conf
+         sudo echo 'options = "metadata,umask=022,fmask=111,case=off"' >> /etc/wsl.conf
+         sudo echo "" >> /etc/wsl.conf
+
+         sudo chmod -R 777 "$HOME/${folder}"
+
+         echo " Installation complete. Before proceeding with the program, please restart your computer."
+         echo " After restarting, you can use the cut and run pipeline by typing 'cutandrun' "
+         echo " into the command line from any directory, and follow the instructions :) "
 
 fi

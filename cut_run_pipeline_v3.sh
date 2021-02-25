@@ -88,9 +88,52 @@ check_file_extension () {
 
 }
 
-
+# Get the directory path to the crun_scripts folder, which should
+# be located somewhere in the home directory
 cutpath=$(find $HOME -name "crun_scripts")
+# And remove the /crun_scripts portion, because we really want the
+# folder with the cutandrun stuff in it
 cutpath="${cutpath::-13}"
+# Get the permissions of the cutandrun folder. We need to have writing
+# permissions on this folder or the program will crash
+permissions=$(ls -ld $cutpath)
+# The permissions string is the first 10 characters of the output from
+# ls -ld $cutpath
+permissions="${permissions::10}"
+# If the permissions string is not the same as the full permissions string
+if [[ "${permissions}" != "drwxrwxrwx" ]]
+    # Then run the chmod -R 777 $cutpath command to recursively assign reading,
+    # writing and exectuing privelages to every folder and file in the directory.
+    then echo ""
+         echo " It seems like the directory $cutpath does"
+         echo " not have writing privelages. Attempting to mediate this now..."
+         sudo chmod -R 777 $cutpath
+         newperm=$(ls -ld $cutpath)
+         newperm="${newperm::10}"
+         if [[ "$newperm" == "$permissions" ]]
+             then echo " "
+                  echo " Unable to change the permissions of the directory $cutpath."
+                  echo " Try navigating to the directory above $cutpath and typing:"
+                  echo " "
+                  echo " chmod -R 777 <name_of_folder>"
+                  echo " "
+                  echo " and then typing"
+                  echo " "
+                  echo " ls -ld <name_of_folder>"
+                  echo " "
+                  echo " If the first 10 characters of the ouput are the string"
+                  echo " "
+                  echo " drwxrwxrwx"
+                  echo " "
+                  echo " Then you should be good to try again."
+                  echo " But, for now, exiting...."
+                  exit
+         elif [[ "$newperm" == "drwxrwxrwx" ]]
+             then echo " "
+                  echo " Permissions changed successfully. Proceeding with the program :)"
+                  echo " "
+         fi
+fi
 
 echo " "
 echo " Before we begin, here is the status of your cutandrun directory:"
