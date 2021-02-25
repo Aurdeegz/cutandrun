@@ -645,8 +645,8 @@ fi
 mkdir "${foldpath_fastqs}/tracks"
 
 # Use pyGenomeTracks to maake some plots :))
-$cutpath/crun_scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "$cutpath/scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
+$cutpath/crun_scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "$cutpath/crun_scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
 
 # Use pyGenomeTracks to plot the entire chromosome (uses BigWig file type by default)
-$cutpath/crun_scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "$cutpath/scripts/python_files/trackfile_editing"
+$cutpath/crun_scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "$cutpath/crun_scripts/python_files/trackfile_editing"
 

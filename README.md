@@ -147,7 +147,24 @@ In order to use the cutandrun command, you first need to clone my repository ont
 cd /mnt/c/Users/<cpu-username>/documents
 git clone https://github.com/kendeegz/cutandrun.git
 ```
-This will create a folder named 'cutandrun' in your documents directory, which has all files in the cutandrun GitHub directory. 
+This will create a folder named 'cutandrun' in your documents directory, which has all files in the cutandrun GitHub directory. Depending on how your WSL is set up, you may have to enable the permission to read, write, or execute files in the cutandrun folder. If this is the case, simply use the command:
+```
+sudo chmod -R 777 /mnt/c/Users/<cpu-username>/documents/cutandrun
+```
+This command will give root (or administrative) privelages to this folder. To check the permissions, you can use the command
+```
+ls -ld /mnt/c/Users/<cpu-username>/documents/cutandrun
+```
+You will get an output that looks something like this:
+```
+drwxrwxrwx 1 <username> <username> 4096 <date_and_time> <foldername>
+```
+The beginning string should be read as follows:
+
+d -> "directory". If this is -, this means that the command was pointing to a file.
+rwx (first block) -> Permissions for the user (denoted by username), they can read, write and execute. If one of these is a - character, then the user does not have that permission.
+rwx (second block) -> Permissions for the group of accounts.
+rwx (third block) -> Permissions for everyone that is neither the user nor in the group.
 
 ## Finding Your Reference Genome
 
