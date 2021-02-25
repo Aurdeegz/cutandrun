@@ -175,17 +175,17 @@ if [ "${quitters:1}" == q ]
 
          cd $HOME
 
-         sudo echo "" >> $HOME/.profile
-         sudo echo 'if [[ "$(umask)" == "0000" ]]; then' >> $HOME/.profile
-         sudo echo "    umask = 0022" >> $HOME/.profile
-         sudo echo "fi" >> $HOME/.profile
+         #sudo echo "" >> $HOME/.profile
+         #sudo echo "mask=$(umask)" >> $HOME/.profile
+         #sudo echo 'if [[ $mask == *0? ]]; then' >> $HOME/.profile
+         #sudo echo "    umask = 0022" >> $HOME/.profile
+         #sudo echo "fi" >> $HOME/.profile
 
-         sudo echo "" >> /etc/wsl.conf
-         sudo echo "[automount]" >> /etc/wsl.conf
-         sudo echo "enabled = true" >> /etc/wsl.conf
-         sudo echo "root = /" >> /etc/wsl.conf
-         sudo echo 'options = "metadata,umask=022,fmask=111,case=off"' >> /etc/wsl.conf
-         sudo echo "" >> /etc/wsl.conf
+         #sudo echo "" >> /etc/wsl.conf
+         #sudo echo "[automount]" >> /etc/wsl.conf
+         #sudo echo "enabled = true" >> /etc/wsl.conf
+         #sudo echo 'options = "metadata,umask=22,fmask=11"' >> /etc/wsl.conf
+         #sudo echo "" >> /etc/wsl.conf
 
          sudo chmod -R 777 "$HOME/${folder}"
 
