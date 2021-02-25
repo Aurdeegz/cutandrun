@@ -68,9 +68,9 @@ echo " "
 echo ' pygt_path=$(python3 -c "import pygenometracks as _ ; print(_.__path__) ")'
 echo ' pygt_path="${pygt_path:2}"'
 echo ' pygt_path="${pygt_path::-2}"'
-echo ' sudo cp ./scripts/pyGenomeTracks_edited/makeTracksFile.py "${pygt_path}/"'
-echo ' sudo cp ./scripts/pyGenomeTracks_edited/BigWigTrack.py "${pygt_path}/tracks/"'
-echo ' sudo cp ./scripts/pyGenomeTracks_edited/GenomeTrack.py "${pygt_path}/tracks/"'
+echo ' sudo cp ./crun_scripts/pyGenomeTracks_edited/makeTracksFile.py "${pygt_path}/"'
+echo ' sudo cp ./crun_scripts/pyGenomeTracks_edited/BigWigTrack.py "${pygt_path}/tracks/"'
+echo ' sudo cp ./crun_scripts/pyGenomeTracks_edited/GenomeTrack.py "${pygt_path}/tracks/"'
 echo ' '
 echo " "
 echo " This installation program will install gnuplot. Gnuplot is not used in the "
@@ -147,9 +147,9 @@ if [ "${quitters:1}" == q ]
          pygt_path="${pygt_path:2}"
          pygt_path="${pygt_path::-2}"
 
-         sudo cp ./scripts/pyGenomeTracks_edited/makeTracksFile.py "${pygt_path}/"
-         sudo cp ./scripts/pyGenomeTracks_edited/BigWigTrack.py "${pygt_path}/tracks/"
-         sudo cp ./scripts/pyGenomeTracks_edited/GenomeTrack.py "${pygt_path}/tracks/"
+         sudo cp ./crun_scripts/pyGenomeTracks_edited/makeTracksFile.py "${pygt_path}/"
+         sudo cp ./crun_scripts/pyGenomeTracks_edited/BigWigTrack.py "${pygt_path}/tracks/"
+         sudo cp ./crun_scripts/pyGenomeTracks_edited/GenomeTrack.py "${pygt_path}/tracks/"
 
          # installation of gnuplot. This isn't used, but seems to be helpful in the field.
 
