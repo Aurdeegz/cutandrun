@@ -85,8 +85,8 @@ echo " Lastly, the cut and run folder will be moved to the /usr/softwares direct
 echo " cut_run_pipeline.sh will be symbolically linked in the local bin as cutandrun."
 echo " "
 echo ' full_path=$(dirname $(realpath install_dependencies.sh))'
-echo ' sudo cp -R "${full_path}" /usr/softwares'
-echo ' sudo ln -s /usr/softwares/cut_run_pipeline/cut_run_pipeline_v3.sh /usr/local/bin/cutandrun'
+echo ' sudo cp -R "${full_path}" $HOME'
+echo ' sudo ln -s $HOME/cutandrun/cut_run_pipeline_v3.sh /usr/local/bin/cutandrun'
 echo ' sudo rm -r "${full_path}"'
 
 echo " "
@@ -163,9 +163,9 @@ if [ "${quitters:1}" == q ]
          IFS="/" read -ra ADDR <<< "${full_path}"
          folder="${ADDR[-1]}"
 
-         sudo cp -R "${full_path}" /usr/softwares
+         sudo cp -R "${full_path}" $HOME
 
-         sudo ln -s "/usr/softwares/${folder}/cut_run_pipeline_v3.sh" /usr/local/bin/cutandrun
+         sudo ln -s "$HOME/${folder}/cut_run_pipeline_v3.sh" /usr/local/bin/cutandrun
 
          sudo rm -r "${full_path}"
 

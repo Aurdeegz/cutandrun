@@ -89,12 +89,13 @@ check_file_extension () {
 }
 
 
-cutpath=$(which cutandrun)
+cutpath=$(find $HOME -name "crun_scripts")
+cutpath="${cutpath::-13}"
 
 echo " "
 echo " Before we begin, here is the status of your cutandrun directory:"
 echo " "
-tree "$cutpath"
+tree -a $cutpath
 echo " "
 echo " When you are prompted for information regarding the genome FASTA file(s),"
 echo " Please OMIT the beginning of the path ($cutpath). You only need to use"
@@ -147,17 +148,20 @@ if [ "${ind_ans,,}" == yes ]
          echo " "
          echo " Your answer: $ind_name"
          echo " "
+         echo " Making the BOWTIE2 Index with:"
+         echo " $cutpath/crun_scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d ${b_index} -i ${ind_name}"
 
          b_index="${cutpath}/${b_index}"
 
-         ./scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${b_index}" -i "${ind_name}"
-
+         $cutpath/crun_scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${b_index}" -i "${ind_name}"
+         echo " "
+         echo " Checking to make sure that nothing went wrong..."
+         echo " "
          ext=$( check_file_extension "${b_index}" )
          if [ "${ext}" == "mixed" ]
              then echo " Failed to make .genome file. exiting..."
                   exit
          fi
-
 
          echo "================================================================= "
          echo " "
@@ -166,11 +170,11 @@ if [ "${ind_ans,,}" == yes ]
          echo " <chormosome>    <length>"
          echo " and is sorted by the chromosome, using the commands"
          echo " "
-         echo " python3 ./scripts/python_files/make_genomefile/count_genome_chars.py $b_index"
+         echo " python3 $cutpath/scripts/python_files/make_genomefile/count_genome_chars.py $b_index"
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
 
-         genome_size_text=$( python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}" )
+         genome_size_text=$( python3 $cutpath/crun_scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}" )
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -192,13 +196,14 @@ elif [ "${ind_ans,,}" == no ]
          echo " "
          echo " Your answer: $cutpath/$b_index"
          echo " "
+         b_index="${cutpath}/${b_index}"
          echo " Please enter the name of the bowtie2 index."
          echo " (example: flygenes)"
          read ind_name
          echo " "
          echo " Your answer: $ind_name"
          echo " "
-         ind_name="${cutpath}/${b_index}/${ind_name}"
+         ind_name="${b_index}/${ind_name}"
 
          ext=$( check_file_extension "${b_index}" )
          if [ "${ext}" == "mixed" ]
@@ -213,11 +218,11 @@ elif [ "${ind_ans,,}" == no ]
          echo " <chormosome>    <length>"
          echo " and is sorted by the chromosome, using the commands"
          echo " "
-         echo " python3 ./scripts/python_files/make_genomefile/count_genome_chars.py $b_index"
+         echo " python3 $cutpath/scripts/python_files/make_genomefile/count_genome_chars.py $b_index"
          echo " sort -k1,1 ${b_index}/length.genome>${b_index}/length_sort.genome"
          echo " rm ${b_index}/length.genome"
 
-         genome_size_text=$( python3 ./scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}" )
+         genome_size_text=$( python3 $cutpath/crun_scripts/python_files/make_genomefile/count_genome_chars.py "$b_index" "false" "${ext}" )
          sort -k1,1 "${b_index}/length.genome">"${b_index}/length_sort.genome"
          rm "${b_index}/length.genome"
 
@@ -267,16 +272,18 @@ if [ "${spike_ans,,}" == yes ]
                   echo " "
                   read spike_dir
                   echo " "
-                  echo " Your answer: $spike_dir"
+                  echo " Your answer: $cutpath/$spike_dir"
                   echo " "
                   echo " "
                   echo " The bowtie2 index will be named 'spike_index'."
+                  echo " Making this index using:"
                   echo " "
+                  echo " $cutpath/crun_scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d ${spike_dir} -i spike_index"
                   spike_ind="spike_index"
 
                   spike_dir=$"${cutpath}/${spike_dir}"
 
-                  ./scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${spike_dir}" -i "spike_index"
+                  $cutpath/crun_scripts/shell_scripts/bowtie2_scripts/bt2_make_index.sh -d "${spike_dir}" -i "spike_index"
 
          elif [ "${spike_dir}" == yes ]
              then spike_stop=1
@@ -286,7 +293,7 @@ if [ "${spike_ans,,}" == yes ]
                   echo " "
                   read spike_dir
                   echo " "
-                  echo " Your answer: $spike_dir"
+                  echo " Your answer: $cutpath/$spike_dir"
                   echo " "
                   spike_dir="${cutpath}/${spike_dir}"
                   echo " "
@@ -347,11 +354,11 @@ if [ "${using_annotations}" == yes ]
                       echo " "
                       echo " You have indicated that your annotation files have been created."
                       echo " Please provide the filepath to your annotation file directory."
-                      echo " (Example: drosophila/drosophila_annotations/annotation_types)"
+                      echo " (Example: genomes/drosophila/annotations/annotation_types)"
                       echo " "
                       read annot_dir
                       echo " "
-                      echo " Your answer: $annot_dir"
+                      echo " Your answer: $cutpath/$annot_dir"
                       echo " "
                       annot_dir="${cutpath}/${annot_dir}"
 
@@ -368,20 +375,22 @@ if [ "${using_annotations}" == yes ]
                       echo " "
                       read annot_dir
                       echo " "
-                      echo " Your answer: $annot_dir"
+                      echo " Your answer: $cutpath/$annot_dir"
                       echo " "
-                      echo " Creating your annotation_types directory"
+                      echo " Creating your annotation_types directory using:"
+                      echo " $cutpath/crun_scripts/shell_scripts/bedops_scripts/bps_make_filter_annotations.sh -d ${annot_dir}"
+                      echo " python3 $cutpath/crun_scripts/python_files/annotation_editing/edit_annotation_file.py ${annot_dir}"
 
                       annot_dir="${cutpath}/${annot_dir}"
 
-                      ./scripts/shell_scripts/bedops_scripts/bps_make_filter_annotations.sh -d "${annot_dir}"
+                      $cutpath/crun_scripts/shell_scripts/bedops_scripts/bps_make_filter_annotations.sh -d "${annot_dir}"
 
                       annot_dir="${annot_dir}/annotation_types"
 
-                      python3 scripts/python_files/annotation_editing/edit_annotation_file.py "${annot_dir}"
+                      python3 $cutpath/crun_scripts/python_files/annotation_editing/edit_annotation_file.py "${annot_dir}"
 
                       echo " "
-                      echo " The annotation file has been parsed and formatted to .bed6 files."
+                      echo " The annotation file has been parsed and formatted to .bed files."
                       echo " Those files will be located in the following directory:"
                       echo " ${annot_dir}"
                       echo " Please DO NOT delete the fields.txt file. This is used to hold"
@@ -548,21 +557,21 @@ echo " of your sequencing sets (OPTIONAL)?"
 echo " "
 read fastqc_svar
 if [ "${fastqc_svar,,}" == yes ]
-    then ./scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -f "${foldpath_fastqs}"
+    then $cutpath/crun_scripts/shell_scripts/fastqc_scripts/fastqc_analysis.sh -f "${foldpath_fastqs}"
 else echo " "
      echo " Proceeding without FASTQC analysis"
      echo " "
 fi
 
 # Run the alignments using the bt2_multi_alignment script
-./scripts/shell_scripts/bowtie2_scripts/bt2_multi_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "${presets}"
+$cutpath/crun_scripts/shell_scripts/bowtie2_scripts/bt2_multi_alignment.sh -i "$ind_name" -f "$foldpath_fastqs" -p "${presets}"
 
 # Use macs3 to call peaks, including the controls if applicable.
-./scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -c "${using_controls,,}" -g "${genome_size_text}"
+$cutpath/crun_scripts/shell_scripts/macs3_scripts/macs3_callpeak_wrapper.sh -b "${foldpath_fastqs}" -c "${using_controls,,}" -g "${genome_size_text}"
 
 # If the user elected to use spike in alignments, then the spike in alignment script will run
 if [ "${spike_ans,,}" == yes ]
-    then ./scripts/shell_scripts/bowtie2_scripts/bt2_spike_in.sh -f "${foldpath_fastqs}" -s "${spike_dir}" -n "spike_index" -p "${spike_presets}"
+    then $cutpath/crun_scripts/shell_scripts/bowtie2_scripts/bt2_spike_in.sh -f "${foldpath_fastqs}" -s "${spike_dir}" -n "spike_index" -p "${spike_presets}"
 fi
 
 # Need to add an analysis python file here. Loop through bowtie2_output folders, make
@@ -573,7 +582,7 @@ fi
 # ./scripts/shell_scripts/bedtools_scripts/bed_peak_calling.sh -b "$foldpath_fastqs" -m "$align_multiple"
 
 # Turn the .bg file into .bw files (used for graphing)
-./scripts/shell_scripts/bedtools_scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -t made
+$cutpath/crun_scripts/shell_scripts/bedtools_scripts/bed_bigwig_conversion.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -t made
 
 # Filter the macs3 narrowPeak files by q value = 0.01.
 # If you want to change this, the arguments for filter_macs3out_files.py are
@@ -583,18 +592,18 @@ fi
 # args[3] : p value. Default is None
 # args[4] : delimiter. Default is tab character (\t).
 # If you wish to use delimiter, you must also set q value and p value.
-python3 scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}" "0.01"
+python3 $cutpath/crun_scripts/python_files/macs3_narrowpeak_edits/filter_macs3out_files.py "${foldpath_fastqs}" "0.01"
 
 if [ "${using_annotations,,}" == yes ]
-    then python3 scripts/python_files/annotation_editing/peak_enrich_annotations.py "${foldpath_fastqs}" "${annot_dir}"
+    then python3 $cutpath/crun_scripts/python_files/annotation_editing/peak_enrich_annotations.py "${foldpath_fastqs}" "${annot_dir}"
 fi
 
 # Make the tracks folder. This is where the annotations/peaks/raw data will be put
 mkdir "${foldpath_fastqs}/tracks"
 
 # Use pyGenomeTracks to maake some plots :))
-./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
+$cutpath/crun_scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_regions.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "$cutpath/scripts/python_files/trackfile_editing" -a "${annot_dir}" -l "${annot_list}" -u "${using_annotations}"
 
 # Use pyGenomeTracks to plot the entire chromosome (uses BigWig file type by default)
-./scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "scripts/python_files/trackfile_editing"
+$cutpath/crun_scripts/shell_scripts/pygenometracks_scripts/pygt_plotting_chroms.sh -b "$foldpath_fastqs" -g "${b_index}/length_sort.genome" -p "$cutpath/scripts/python_files/trackfile_editing"
 
