@@ -95,7 +95,7 @@ cutpath="${cutpath::-13}"
 echo " "
 echo " Before we begin, here is the status of your cutandrun directory:"
 echo " "
-tree -a $cutpath
+tree $cutpath
 echo " "
 echo " When you are prompted for information regarding the genome FASTA file(s),"
 echo " Please OMIT the beginning of the path ($cutpath). You only need to use"
