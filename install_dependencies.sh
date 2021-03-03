@@ -22,9 +22,22 @@ echo " but I have not tested it."
 echo " "
 echo " Theses are the commands that this program will run:"
 echo " "
-echo " Install numpy, scipy, glob and pyGenomeTracks modules for Python 3.8.5"
+echo " Install numpy, matplotlib, scipy, glob, pyGenomeTracks, macs3 and tk modules for Python 3.8.5"
 echo " "
-echo " sudo python3 -m pip install numpy scipy glob pyGenomeTracks macs3"
+#echo " sudo python3 -m pip install numpy scipy glob pyGenomeTracks macs3"
+echo " "
+echo " sudo apt-get update"
+echo " sudo apt-get upgrade"
+echo " sudo apt-get install python3-pip"
+echo " sudo apt-get install python3-tk"
+echo " sudo apt-get install python3-gi-cairo"
+echo " sudo python3 -m pip install numpy"
+echo " sudo python3 -m pip install matplotlib"
+echo " sudo python3 -m pip install scipy"
+echo " sudo python3 -m pip install glob"
+echo " sudo python3 -m pip install pyGenomeTracks"
+echo " sudo python3 -m pip install macs3"
+echo " sudo python3 -m pip install tk"
 echo " "
 echo " Install bowtie2 (genome alignment tool), bedtools (tools for working with aligned sequence files)"
 echo " and samtools (another tool for working with aligned sequence files)"
@@ -88,22 +101,34 @@ echo ' full_path=$(dirname $(realpath install_dependencies.sh))'
 echo ' sudo cp -R "${full_path}" $HOME'
 echo ' sudo ln -s $HOME/cutandrun/cut_run_pipeline_v3.sh /usr/local/bin/cutandrun'
 echo ' sudo rm -r "${full_path}"'
+echo ' '
+echo ' And the permissions of the cutandrun folder will be changed to allow for writing'
+echo ' sudo chmod -R 777 "$HOME/${folder}"'
 
 echo " "
 echo " If you DO want to proceed with the installation, simply press enter at the prompt below. "
 echo " If you DO NOT want to proceed with the installation, type 'q' or 'quit' at the prompt below."
 read quitters
-if [ "${quitters:1}" == q ]
+if [ "${quitters::1}" == q ]
     then echo " Have a lovely day!"
     else echo " "
          echo " Installation beginning. Please press 'y' when prompted."
          echo " "
+         sudo apt-get update
+         sudo apt-get upgrade
+
+         sudo apt-get install python3-pip
+         sudo apt-get install python3-tk
+
+         sudo apt-get install python3-gi-cairo
 
          sudo python3 -m pip install numpy
+         sudo python3 -m pip install matplotlib
          sudo python3 -m pip install scipy
          sudo python3 -m pip install glob
          sudo python3 -m pip install pyGenomeTracks
          sudo python3 -m pip install macs3
+         sudo python3 -m pip install tk
 
          # The user should accept all of these installations
 
