@@ -200,6 +200,12 @@ if [ "${quitters::1}" == q ]
 
          cd $HOME
 
+         # Some people have reported having permissions issues in WSL (not being able to edit
+         # Windows files or folders in WSL), which is apparently a symptom of how Windows writes
+         # files and assigns default permissions. These lines of code add lines to files in WSL
+         # that are supposed to fix these issues, although they did not work on either of my
+         # machines.
+
          #sudo echo "" >> $HOME/.profile
          #sudo echo "mask=$(umask)" >> $HOME/.profile
          #sudo echo 'if [[ $mask == *0? ]]; then' >> $HOME/.profile

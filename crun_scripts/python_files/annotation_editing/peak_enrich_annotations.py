@@ -381,14 +381,14 @@ def get_enrich_annote_lines(filtered_file_dir,
                 for annot_file in glob.iglob(f"{annot_dir}/*"):
                     # Get the annotation file extension
                     annot_extension = annot_file.split('.')[-1]
-                    # If the annotation header has not yet been updated
-                    if annot_header == "":
-                        # Then use make_header() to update the annotation header
-                        annot_header = make_header(formatting_dictionary, annot_extension, delimiter)
                     # Or if the annotation extension is txt or if region is in the file
                     # then simply continue, those files are not of interest
                     if annot_extension == 'txt' or "region" in annot_file:
                         continue
+                    # If the annotation header has not yet been updated
+                    if annot_header == "":
+                        # Then use make_header() to update the annotation header
+                        annot_header = make_header(formatting_dictionary, annot_extension, delimiter)
                     # Use the check_line_annotes() function to get a list of comparisons
                     # for the given annotation file and peak region combination
                     new_comparisons = check_line_annotes(annot_file,
