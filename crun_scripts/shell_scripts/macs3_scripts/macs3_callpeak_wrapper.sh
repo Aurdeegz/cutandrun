@@ -30,21 +30,21 @@ echo "==========================================================================
 echo " "
 echo " "
 echo " Begining peak calling. This program uses MACS3 for peak calling, using the settings"
-echo " -f BAM -B --call-summits -q 1"
+echo " -f BAMPE -B --call-summits -q 1"
 echo " The other settings used are -g (genome size, input by user or found in cutandrun),"
 echo " -t (test file, found by program assuming BAM extension), -c (control, only found if"
 echo " the user says they have controls and the file directories are set up appropriately),"
 echo " and -outdir (output directory, will be the macs3_out folder created within directory)."
-echo " "
-echo " NOTE: The cutandrun program uses Bowtie2 for alignments, which produces paired end"
-echo " Sequencing alignment files. MACS3 has a setting, BAMPE, for files like this. To see"
-echo " if the BAMPE setting produced expected results, I ran MACS3 using BAMPE with the"
-echo " control and test files as the same file (tests/test_multiple/stat92e_exp_A/alignment_0.sam)."
-echo " Since these are the same files, I did not expect to see any significant peaks after peak calling."
-echo " I did, however, get a lot of peaks showing up below q = 0.01. I do not know why this happend,"
-echo " but whenever I use the BAM setting I see no significant peaks when using the same"
-echo " test and control files. As such, I use the BAM setting, not the BAMPE setting for"
-echo " MACS3 peak calling."
+#echo " "
+#echo " NOTE: The cutandrun program uses Bowtie2 for alignments, which produces paired end"
+#echo " Sequencing alignment files. MACS3 has a setting, BAMPE, for files like this. To see"
+#echo " if the BAMPE setting produced expected results, I ran MACS3 using BAMPE with the"
+#echo " control and test files as the same file (tests/test_multiple/stat92e_exp_A/alignment_0.sam)."
+#echo " Since these are the same files, I did not expect to see any significant peaks after peak calling."
+#echo " I did, however, get a lot of peaks showing up below q = 0.01. I do not know why this happend,"
+#echo " but whenever I use the BAM setting I see no significant peaks when using the same"
+#echo " test and control files. As such, I use the BAM setting, not the BAMPE setting for"
+#echo " MACS3 peak calling."
 echo " "
 echo " "
 echo " "
@@ -360,7 +360,7 @@ if [ "${using_controls,,}" == yes ]
                                mkdir "${macsdir}"
                                # Then use macs3 to call peaks. More information on the macs3
                                # settings on the MACS3 github page https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
-                               macs3 callpeak ${paired_paths} -f BAM -n exp_w_ctrl -q 1 -B --call-summits -g "${gsize}" --outdir "${macsdir}"
+                               macs3 callpeak ${paired_paths} -f BAMPE -n exp_w_ctrl -q 1 -B --call-summits -g "${gsize}" --outdir "${macsdir}"
                                # Run the Rscript to show the peaks model
                                Rscript "${macsdir}/exp_w_ctrl_model.r"
                                # and move the ouput file to the proper folder.
@@ -383,7 +383,7 @@ if [ "${using_controls,,}" == yes ]
                                        mkdir "${fold}/macs3_out"
                                        # Use macs3 to call peaks. For more information, see the MACS3
                                        # github page https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
-                                       macs3 callpeak -t ${bam_file} -f BAM -n exp_no_ctrl -q 1 --call-summits -g "${gsize}" --outdir "${fold}/macs3_out"
+                                       macs3 callpeak -t ${bam_file} -f BAMPE -n exp_no_ctrl -q 1 --call-summits -g "${gsize}" --outdir "${fold}/macs3_out"
                                        # Run the Rscript for the peak model
                                        Rscript "${macsdir}/exp_no_ctrl_model.r"
                                        # and move the output file to the correct directory
@@ -427,7 +427,7 @@ elif [ "${using_controls,,}" == no ]
                  mkdir "${fold}/macs3_out"
                  # Use macs3 to call peaks. More information on parameters
                  # here: https://github.com/macs3-project/MACS/blob/master/docs/callpeak.md
-                 macs3 callpeak -t ${bam_file} -f BAM -n exp_no_ctrl -q 1 --call-summits -g "${gsize}" --outdir "${fold}/macs3_out"
+                 macs3 callpeak -t ${bam_file} -f BAMPE -n exp_no_ctrl -q 1 --call-summits -g "${gsize}" --outdir "${fold}/macs3_out"
                  # Run the rscript to make the peak model plot
                  Rscript "${fold}/macs3_out/exp_no_ctrl_model.r"
                  # And move the peak model plot to the correct directory
